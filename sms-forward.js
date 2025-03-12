@@ -303,18 +303,36 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
     // 发送Bark通知
     if (bark) {
       try {
-        // 处理Bark URL
-        let barkUrl = bark;
+        // 对内容进行特殊处理，防止内容中的URL破坏整体API结构
+        // 将原始模板拆分为基础URL部分和查询参数部分
+        let [baseUrlPart, queryPart] = bark.split('?');
         
-        // 提取Bark基础URL（通常是 https://api.day.app/YOUR_KEY/ 或类似格式）
-        let barkBaseUrl = barkUrl.split('/').slice(0, 4).join('/');
-        if (!barkBaseUrl.endsWith('/')) barkBaseUrl += '/';
+        // 1. 处理基础URL部分
+        const baseUrlWithPlaceholders = baseUrlPart;
+        // 编码标题和内容，确保URL安全
+        const encodedTitle = encodeURIComponent(title);
+        const encodedContent = encodeURIComponent(`${subtitle}\n${body}`);
         
-        // 使用查询参数方式发送通知，避免路径冲突
-        const requestUrl = `${barkBaseUrl}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(`${subtitle}\n${body}`)}&copy=${encodeURIComponent(copy)}`;
+        // 替换基础URL中的占位符
+        let processedBaseUrl = baseUrlWithPlaceholders
+          .replace('[推送标题]', encodedTitle)
+          .replace('[推送内容]', encodedContent);
         
-        $.log(`开始 bark 请求: ${requestUrl}`);
-        const res = await $.http.get({ url: requestUrl });
+        // 2. 处理查询参数部分
+        let finalUrl;
+        if (queryPart) {
+          // 编码复制内容
+          const encodedCopy = encodeURIComponent(copy);
+          // 替换查询参数中的占位符
+          const processedQuery = queryPart.replace('[复制内容]', encodedCopy);
+          // 组合完整URL
+          finalUrl = `${processedBaseUrl}?${processedQuery}`;
+        } else {
+          finalUrl = processedBaseUrl;
+        }
+        
+        $.log(`开始 bark 请求: ${finalUrl}`);
+        const res = await $.http.get({ url: finalUrl });
         
         // ... existing code ...
       } catch (e) {

@@ -304,11 +304,11 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
     if (bark) {
       try {
         // 添加日志确认此代码块被执行
-        $.log(`🔍 准备处理 Bark 请求，原始模板: ${bark}`);
+        console.log(`🔍 准备处理 Bark 请求，原始模板: ${bark}`);
         
         // 将原始模板拆分为基础URL部分和查询参数部分
         const [baseUrlPart, queryPart] = bark.split('?');
-        $.log(`🔍 拆分后 - 基础URL: ${baseUrlPart}, 查询参数: ${queryPart || '无'}`);
+        console.log(`🔍 拆分后 - 基础URL: ${baseUrlPart}, 查询参数: ${queryPart || '无'}`);
         
         // 1. 处理基础URL部分 - 使用更安全的编码方式
         // 使用一个函数专门处理URL中的特殊字符
@@ -326,21 +326,21 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
         // 编码标题和内容
         const encodedTitle = encodeForUrlPath(title);
         const encodedContent = encodeForUrlPath(`${subtitle}\n${body}`);
-        $.log(`🔍 编码后 - 标题: ${encodedTitle}`);
-        $.log(`🔍 编码后 - 内容: ${encodedContent}`);
+        console.log(`🔍 编码后 - 标题: ${encodedTitle}`);
+        console.log(`🔍 编码后 - 内容: ${encodedContent}`);
         
         // 替换基础URL中的占位符
         let processedBaseUrl = baseUrlPart
           .replace('[推送标题]', encodedTitle)
           .replace('[推送内容]', encodedContent);
-        $.log(`🔍 处理后的基础URL: ${processedBaseUrl}`);
+          console.log(`🔍 处理后的基础URL: ${processedBaseUrl}`);
         
         // 2. 处理查询参数部分
         let finalUrl;
         if (queryPart) {
           // 编码复制内容
           const encodedCopy = encodeForUrlPath(copy);
-          $.log(`🔍 编码后 - 复制内容: ${encodedCopy}`);
+          console.log(`🔍 编码后 - 复制内容: ${encodedCopy}`);
           
           // 替换查询参数中的占位符
           const processedQuery = queryPart.replace('[复制内容]', encodedCopy);
@@ -350,24 +350,24 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
           finalUrl = processedBaseUrl;
         }
         
-        $.log(`🔍 最终请求URL: ${finalUrl}`);
+        console.log(`🔍 最终请求URL: ${finalUrl}`);
         
         // 执行请求
-        $.log(`开始 bark 请求: ${finalUrl}`);
+        console.log(`开始 bark 请求: ${finalUrl}`);
         const res = await $.http.get({ url: finalUrl });
         
         // 记录响应信息
         const status = $.lodash_get(res, 'status');
-        $.log('🔍 响应状态码:');
-        $.log(status);
+        console.log('🔍 响应状态码:');
+        console.log(status);
         let resBody = String($.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody'));
-        $.log('🔍 响应内容:');
-        $.log(resBody);
+        console.log('🔍 响应内容:');
+        console.log(resBody);
         
         try {
           resBody = JSON.parse(resBody);
         } catch (e) {
-          $.log('🔍 响应不是有效的JSON');
+          console.log('🔍 响应不是有效的JSON');
         }
         
         // 检查响应是否成功
@@ -376,7 +376,7 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
              !$.lodash_get(resBody, 'isSuccess'))) {
           
           // 如果失败，尝试备用方法 - 使用查询参数方式
-          $.log('⚠️ 主方法失败，尝试备用方法');
+          console.log('⚠️ 主方法失败，尝试备用方法');
           
           // 提取域名和密钥部分
           const urlParts = bark.split('/');
@@ -395,17 +395,17 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
             // 使用查询参数方式构建URL
             const fallbackUrl = `${domainAndKeyPart}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(`${subtitle}\n${body}`)}&copy=${encodeURIComponent(copy)}&autoCopy=1&sound=true`;
             
-            $.log(`🔍 备用方法URL: ${fallbackUrl}`);
+            console.log(`🔍 备用方法URL: ${fallbackUrl}`);
             const fallbackRes = await $.http.get({ url: fallbackUrl });
             
             // 记录备用方法响应
             const fallbackStatus = $.lodash_get(fallbackRes, 'status');
-            $.log('🔍 备用方法响应状态码:');
-            $.log(fallbackStatus);
+            console.log('🔍 备用方法响应状态码:');
+            console.log(fallbackStatus);
             
             let fallbackBody = String($.lodash_get(fallbackRes, 'body') || $.lodash_get(fallbackRes, 'rawBody'));
-            $.log('🔍 备用方法响应内容:');
-            $.log(fallbackBody);
+            console.log('🔍 备用方法响应内容:');
+            console.log(fallbackBody);
           }
         }
       } catch (e) {

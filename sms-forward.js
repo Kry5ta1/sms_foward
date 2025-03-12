@@ -353,7 +353,7 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
         console.log(`🔍 最终请求URL: ${finalUrl}`);
         
         // 执行请求
-        console.log(`开始 bark 请求: ${finalUrl}`);
+        console.log(`开始 bark 请求00: ${finalUrl}`);
         const res = await $.http.get({ url: finalUrl });
         
         // 记录响应信息

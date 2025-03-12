@@ -303,44 +303,115 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
     // 发送Bark通知
     if (bark) {
       try {
-        // 对内容进行特殊处理，防止内容中的URL破坏整体API结构
-        // 将原始模板拆分为基础URL部分和查询参数部分
-        let [baseUrlPart, queryPart] = bark.split('?');
+        // 添加日志确认此代码块被执行
+        $.log(`🔍 准备处理 Bark 请求，原始模板: ${bark}`);
         
-        // 1. 处理基础URL部分
-        const baseUrlWithPlaceholders = baseUrlPart;
-        // 编码标题和内容，确保URL安全
-        const encodedTitle = encodeURIComponent(title);
-        const encodedContent = encodeURIComponent(`${subtitle}\n${body}`);
+        // 将原始模板拆分为基础URL部分和查询参数部分
+        const [baseUrlPart, queryPart] = bark.split('?');
+        $.log(`🔍 拆分后 - 基础URL: ${baseUrlPart}, 查询参数: ${queryPart || '无'}`);
+        
+        // 1. 处理基础URL部分 - 使用更安全的编码方式
+        // 使用一个函数专门处理URL中的特殊字符
+        function encodeForUrlPath(str) {
+          return encodeURIComponent(str)
+            .replace(/\(/g, '%28')
+            .replace(/\)/g, '%29')
+            .replace(/'/g, '%27')
+            .replace(/!/g, '%21')
+            .replace(/~/g, '%7E')
+            .replace(/\*/g, '%2A')
+            .replace(/%20/g, '+'); // 空格编码为+
+        }
+        
+        // 编码标题和内容
+        const encodedTitle = encodeForUrlPath(title);
+        const encodedContent = encodeForUrlPath(`${subtitle}\n${body}`);
+        $.log(`🔍 编码后 - 标题: ${encodedTitle}`);
+        $.log(`🔍 编码后 - 内容: ${encodedContent}`);
         
         // 替换基础URL中的占位符
-        let processedBaseUrl = baseUrlWithPlaceholders
+        let processedBaseUrl = baseUrlPart
           .replace('[推送标题]', encodedTitle)
           .replace('[推送内容]', encodedContent);
-        $.log(`处理后的基础URL: ${processedBaseUrl}`);
+        $.log(`🔍 处理后的基础URL: ${processedBaseUrl}`);
         
         // 2. 处理查询参数部分
         let finalUrl;
         if (queryPart) {
           // 编码复制内容
-          const encodedCopy = encodeURIComponent(copy);
+          const encodedCopy = encodeForUrlPath(copy);
+          $.log(`🔍 编码后 - 复制内容: ${encodedCopy}`);
+          
           // 替换查询参数中的占位符
           const processedQuery = queryPart.replace('[复制内容]', encodedCopy);
           // 组合完整URL
           finalUrl = `${processedBaseUrl}?${processedQuery}`;
-          $.log(`处理后的完整URL: ${finalUrl}`);
         } else {
           finalUrl = processedBaseUrl;
-          $.log(`处理后的完整URL: ${finalUrl}`);
         }
         
+        $.log(`🔍 最终请求URL: ${finalUrl}`);
+        
+        // 执行请求
         $.log(`开始 bark 请求: ${finalUrl}`);
         const res = await $.http.get({ url: finalUrl });
         
-        // ... existing code ...
+        // 记录响应信息
+        const status = $.lodash_get(res, 'status');
+        $.log('🔍 响应状态码:');
+        $.log(status);
+        let resBody = String($.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody'));
+        $.log('🔍 响应内容:');
+        $.log(resBody);
+        
+        try {
+          resBody = JSON.parse(resBody);
+        } catch (e) {
+          $.log('🔍 响应不是有效的JSON');
+        }
+        
+        // 检查响应是否成功
+        if (status >= 400 || 
+            (!['0', '200'].includes(String($.lodash_get(resBody, 'code'))) && 
+             !$.lodash_get(resBody, 'isSuccess'))) {
+          
+          // 如果失败，尝试备用方法 - 使用查询参数方式
+          $.log('⚠️ 主方法失败，尝试备用方法');
+          
+          // 提取域名和密钥部分
+          const urlParts = bark.split('/');
+          let domainAndKeyPart = '';
+          
+          // 找到barkweb_tsm和key
+          for (let i = 0; i < urlParts.length; i++) {
+            if (urlParts[i] === 'barkweb_tsm') {
+              // 包含域名、barkweb_tsm和key
+              domainAndKeyPart = urlParts.slice(0, i + 2).join('/');
+              break;
+            }
+          }
+          
+          if (domainAndKeyPart) {
+            // 使用查询参数方式构建URL
+            const fallbackUrl = `${domainAndKeyPart}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(`${subtitle}\n${body}`)}&copy=${encodeURIComponent(copy)}&autoCopy=1&sound=true`;
+            
+            $.log(`🔍 备用方法URL: ${fallbackUrl}`);
+            const fallbackRes = await $.http.get({ url: fallbackUrl });
+            
+            // 记录备用方法响应
+            const fallbackStatus = $.lodash_get(fallbackRes, 'status');
+            $.log('🔍 备用方法响应状态码:');
+            $.log(fallbackStatus);
+            
+            let fallbackBody = String($.lodash_get(fallbackRes, 'body') || $.lodash_get(fallbackRes, 'rawBody'));
+            $.log('🔍 备用方法响应内容:');
+            $.log(fallbackBody);
+          }
+        }
       } catch (e) {
-        console.log(e)
-        $.msg('短信转发', `❌ bark 请求`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {})
+        console.log('❌ Bark请求错误:');
+        console.log(e);
+        $.msg('短信转发', `❌ bark 请求`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {});
       }
     }
   } else {

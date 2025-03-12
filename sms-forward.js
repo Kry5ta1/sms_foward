@@ -303,39 +303,20 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
     // 发送Bark通知
     if (bark) {
       try {
-        // 检查bark URL模板格式
+        // 处理Bark URL
         let barkUrl = bark;
         
-        // 创建一个安全的编码函数
-        const safeEncode = (str) => {
-          // 对URL做特殊处理，避免二次编码
-          return encodeURIComponent(str)
-            .replace(/%25/g, '%') // 修复二次编码问题
-            .replace(/%2F/g, '/') // 保留URL中的斜杠，提高可读性
-            .replace(/%3A/g, ':'); // 保留URL中的冒号，提高可读性
-        };
+        // 提取Bark基础URL（通常是 https://api.day.app/YOUR_KEY/ 或类似格式）
+        let barkBaseUrl = barkUrl.split('/').slice(0, 4).join('/');
+        if (!barkBaseUrl.endsWith('/')) barkBaseUrl += '/';
         
-        // 使用安全编码函数替换模板变量
-        barkUrl = barkUrl
-          .replace('[推送标题]', safeEncode(title))
-          .replace('[推送内容]', safeEncode(`${subtitle}\n${body}`))
-          .replace('[复制内容]', safeEncode(copy));
+        // 使用查询参数方式发送通知，避免路径冲突
+        const requestUrl = `${barkBaseUrl}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(`${subtitle}\n${body}`)}&copy=${encodeURIComponent(copy)}`;
         
-        $.log(`开始 bark 请求: ${barkUrl}`)
-        const res = await $.http.get({ url: barkUrl })
-        // console.log(res)
-        const status = $.lodash_get(res, 'status')
-        $.log('↓ res status')
-        $.log(status)
-        let resBody = String($.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody'))
-        try {
-          resBody = JSON.parse(resBody)
-        } catch (e) {}
-        $.log('↓ res body')
-        console.log($.toStr(resBody))
-        if (!['0', '200'].includes(String($.lodash_get(resBody, 'code'))) && !$.lodash_get(resBody, 'isSuccess')) {
-          throw new Error($.lodash_get(resBody, 'errorMessage') || $.lodash_get(resBody, 'message') || $.lodash_get(resBody, 'msg') || '未知错误')
-        }
+        $.log(`开始 bark 请求: ${requestUrl}`);
+        const res = await $.http.get({ url: requestUrl });
+        
+        // ... existing code ...
       } catch (e) {
         console.log(e)
         $.msg('短信转发', `❌ bark 请求`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {})

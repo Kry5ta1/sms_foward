@@ -317,6 +317,7 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
         let processedBaseUrl = baseUrlWithPlaceholders
           .replace('[推送标题]', encodedTitle)
           .replace('[推送内容]', encodedContent);
+        $.log(`处理后的基础URL: ${processedBaseUrl}`);
         
         // 2. 处理查询参数部分
         let finalUrl;
@@ -327,8 +328,10 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
           const processedQuery = queryPart.replace('[复制内容]', encodedCopy);
           // 组合完整URL
           finalUrl = `${processedBaseUrl}?${processedQuery}`;
+          $.log(`处理后的完整URL: ${finalUrl}`);
         } else {
           finalUrl = processedBaseUrl;
+          $.log(`处理后的完整URL: ${finalUrl}`);
         }
         
         $.log(`开始 bark 请求: ${finalUrl}`);

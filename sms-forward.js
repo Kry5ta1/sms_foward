@@ -303,12 +303,26 @@ async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
     // 发送Bark通知
     if (bark) {
       try {
-        const url = bark
-          .replace('[推送标题]', encodeURIComponent(title))
-          .replace('[推送内容]', encodeURIComponent(`${subtitle}\n${body}`))
-          .replace('[复制内容]', encodeURIComponent(copy))
-        $.log(`开始 bark 请求: ${url}`)
-        const res = await $.http.get({ url })
+        // 检查bark URL模板格式
+        let barkUrl = bark;
+        
+        // 创建一个安全的编码函数
+        const safeEncode = (str) => {
+          // 对URL做特殊处理，避免二次编码
+          return encodeURIComponent(str)
+            .replace(/%25/g, '%') // 修复二次编码问题
+            .replace(/%2F/g, '/') // 保留URL中的斜杠，提高可读性
+            .replace(/%3A/g, ':'); // 保留URL中的冒号，提高可读性
+        };
+        
+        // 使用安全编码函数替换模板变量
+        barkUrl = barkUrl
+          .replace('[推送标题]', safeEncode(title))
+          .replace('[推送内容]', safeEncode(`${subtitle}\n${body}`))
+          .replace('[复制内容]', safeEncode(copy));
+        
+        $.log(`开始 bark 请求: ${barkUrl}`)
+        const res = await $.http.get({ url: barkUrl })
         // console.log(res)
         const status = $.lodash_get(res, 'status')
         $.log('↓ res status')

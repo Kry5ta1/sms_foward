@@ -1,0 +1,22 @@
+name: "sms-forward"
+author: "Kry5ta1"
+category: "Kry5ta1Hub"
+
+http:
+  force-http-engine:
+    - "jprx.m.qq.com"
+    - "scan.call.f.360.cn"
+  mitm:
+    - "jprx.m.qq.com"
+    - "scan.call.f.360.cn"
+  script:
+    - match: ^https?:\/\/scan\.call\.f\.360\.cn\/ios_message\.php|^https?:\/\/jprx\.m\.qq\.com\/forward
+      name: sms-forward
+      type: request
+      require-body: true
+      timeout: 120
+
+script-providers:
+  BoxJs:
+    url: https://raw.githubusercontent.com/Kry5ta1/sms_foward/refs/heads/main/sms-forward.js
+    interval: 86400

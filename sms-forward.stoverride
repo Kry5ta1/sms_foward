@@ -10,7 +10,7 @@ http:
     - "jprx.m.qq.com"
     - "scan.call.f.360.cn"
   script:
-    - match: ^https?:\/\/scan\.call\.f\.360\.cn\/ios_message\.php|^https?:\/\/jprx\.m\.qq\.com\/forward
+    - match: (^https?:\/\/scan\.call\.f\.360\.cn\/ios_message\.php|^https?:\/\/jprx\.m\.qq\.com\/forward)
       name: sms-forward
       type: request
       require-body: true

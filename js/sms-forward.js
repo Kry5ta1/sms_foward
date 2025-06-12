@@ -16,9 +16,9 @@ const config = {
 const $ = new Env(key)
 
 // 定义存储配置的键名常量
-const KEY_INITED = `@ChinaTelecomOperators.${key}.inited` // 初始化状态键
-const KEY_TYPE = `@ChinaTelecomOperators.${key}.type`     // 短信服务类型键
-const KEY_KEYS = `@ChinaTelecomOperators.${key}.keys`     // 配置键列表
+const KEY_INITED = `@Kry5ta1.${key}.inited` // 初始化状态键
+const KEY_TYPE = `@Kry5ta1.${key}.type`     // 短信服务类型键
+const KEY_KEYS = `@Kry5ta1.${key}.keys`     // 配置键列表
 
 // 获取所有配置的键，并处理成数组
 const keys = `${$.getdata(KEY_KEYS) || ''}`
@@ -36,7 +36,7 @@ let result
 // 主函数，使用IIFE立即执行
 !(async () => {
   // 检查是否禁用脚本
-  const KEY_DISABLED = `@ChinaTelecomOperators.${key}.disabled`
+  const KEY_DISABLED = `@Kry5ta1.${key}.disabled`
   const disabled = $.getdata(KEY_DISABLED)
 
   if (String(disabled) === 'true') {
@@ -79,7 +79,7 @@ let result
   // 处理每个配置的函数
   const fn = async (key, index) => {
     $.log(`👉🏻 [${index}][${key}] 配置开始`)
-    const KEY_DISABLED = `@ChinaTelecomOperators.${key}.disabled`
+    const KEY_DISABLED = `@Kry5ta1.${key}.disabled`
     const disabled = $.getdata(KEY_DISABLED)
 
     // 跳过禁用的配置
@@ -89,17 +89,17 @@ let result
     }
 
     // 定义过滤规则的键名
-    const KEY_SENDER_ALLOW = `@ChinaTelecomOperators.${key}.sender_allow` // 允许的发送者
-    const KEY_SENDER_DENY = `@ChinaTelecomOperators.${key}.sender_deny`   // 拒绝的发送者
-    const KEY_TEXT_ALLOW = `@ChinaTelecomOperators.${key}.text_allow`     // 允许的内容
-    const KEY_TEXT_DENY = `@ChinaTelecomOperators.${key}.text_deny`       // 拒绝的内容
+    const KEY_SENDER_ALLOW = `@Kry5ta1.${key}.sender_allow` // 允许的发送者
+    const KEY_SENDER_DENY = `@Kry5ta1.${key}.sender_deny`   // 拒绝的发送者
+    const KEY_TEXT_ALLOW = `@Kry5ta1.${key}.text_allow`     // 允许的内容
+    const KEY_TEXT_DENY = `@Kry5ta1.${key}.text_deny`       // 拒绝的内容
 
     // 定义通知模板的键名
-    const KEY_TITLE = `@ChinaTelecomOperators.${key}.title`         // 标题模板
-    const KEY_SUBTITLE = `@ChinaTelecomOperators.${key}.subtitle`   // 副标题模板
-    const KEY_BODY = `@ChinaTelecomOperators.${key}.body`           // 正文模板
-    const KEY_BARK = `@ChinaTelecomOperators.${key}.bark`           // Bark通知地址
-    const KEY_PUSHDEER = `@ChinaTelecomOperators.${key}.pushdeer`   // PushDeer通知地址
+    const KEY_TITLE = `@Kry5ta1.${key}.title`         // 标题模板
+    const KEY_SUBTITLE = `@Kry5ta1.${key}.subtitle`   // 副标题模板
+    const KEY_BODY = `@Kry5ta1.${key}.body`           // 正文模板
+    const KEY_BARK = `@Kry5ta1.${key}.bark`           // Bark通知地址
+    const KEY_PUSHDEER = `@Kry5ta1.${key}.pushdeer`   // PushDeer通知地址
 
     // 获取过滤规则并创建正则表达式
     const senderAllow = $.getdata(KEY_SENDER_ALLOW) || ''
@@ -154,8 +154,8 @@ let result
     }
     
     // 验证码识别相关配置
-    const KEY_CODE_TEST = `@ChinaTelecomOperators.${key}.code_test` // 验证码判断正则
-    const KEY_CODE_GET = `@ChinaTelecomOperators.${key}.code_get`   // 验证码提取正则
+    const KEY_CODE_TEST = `@Kry5ta1.${key}.code_test` // 验证码判断正则
+    const KEY_CODE_GET = `@Kry5ta1.${key}.code_get`   // 验证码提取正则
 
     // 获取验证码识别规则并创建正则表达式
     const codeTest = $.getdata(KEY_CODE_TEST) || '.+(码)'  // 默认检测包含"码"的内容
@@ -228,8 +228,8 @@ let result
   }
 
   // 处理隐私相关配置
-  const KEY_REPLACE_NUM = `@ChinaTelecomOperators.${key}.replace_num` // 替换数字配置
-  const KEY_NO_POST = `@ChinaTelecomOperators.${key}.no_post`         // 不提交数据配置
+  const KEY_REPLACE_NUM = `@Kry5ta1.${key}.replace_num` // 替换数字配置
+  const KEY_NO_POST = `@Kry5ta1.${key}.no_post`         // 不提交数据配置
 
   const noPost = $.getdata(KEY_NO_POST)
 

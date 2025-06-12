@@ -9,7 +9,6 @@
         "id": "Kry5ta1.sms_forward",
         "name": "短信转发",
         "descs_html": [
-          "<a href=\"https://github.com/Kry5ta1/SMSForward\">查看文档</a>",
           "<a onClick=\"window.location.reload(true);\">刷新</a>"
         ],
         "keys": [

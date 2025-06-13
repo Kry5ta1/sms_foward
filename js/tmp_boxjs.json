@@ -9,7 +9,16 @@
         "id": "Kry5ta1.sms_forward",
         "name": "短信转发",
         "descs_html": [
-          "<a onClick=\"window.location.reload(true);\">刷新</a>"
+          "<div style='margin-bottom: 10px;'>",
+          "<a onClick=\"window.location.reload(true);\" style='margin-right: 15px; color: #007AFF; text-decoration: none;'>🔄 刷新配置</a>",
+          "<a href=\"https://github.com/Kry5ta1/sms_foward\" target=\"_blank\" style='margin-right: 15px; color: #007AFF; text-decoration: none;'>📖 使用说明</a>",
+          "<a href=\"https://regex101.com\" target=\"_blank\" style='margin-right: 15px; color: #007AFF; text-decoration: none;'>🔧 正则测试</a>",
+          "<a href=\"https://api.day.app\" target=\"_blank\" style='color: #007AFF; text-decoration: none;'>🔔 Bark官网</a>",
+          "</div>",
+          "<div style='background: #f8f9fa; padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #007AFF;'>",
+          "<h4 style='margin: 0 0 8px 0; color: #333;'>📱 快速配置指南</h4>",
+          "<p style='margin: 0; color: #666; font-size: 14px;'>1️⃣ 选择短信服务类型（推荐腾讯手机管家）<br/>2️⃣ 配置Bark推送地址<br/>3️⃣ 设置过滤规则（可选）<br/>4️⃣ 自定义通知模板（可选）</p>",
+          "</div>"
         ],
         "keys": [
           "@Kry5ta1.sms_forward.disabled",
@@ -33,118 +42,129 @@
         "settings": [
           {
             "id": "@Kry5ta1.sms_forward.disabled",
-            "name": "禁用",
+            "name": "🔴 禁用脚本",
             "val": false,
             "type": "boolean",
-            "desc": "默认启用"
+            "desc": "⚠️ 开启后将完全停止短信转发功能\n\n💡 默认启用，建议保持开启状态"
           },
           {
             "id": "@Kry5ta1.sms_forward.type",
-            "name": "类型",
+            "name": "📱 短信服务类型",
             "val": "tencent",
             "type": "selects",
             "items": [
               {
                 "key": "tencent",
-                "label": "腾讯手机管家"
+                "label": "🛡️ 腾讯手机管家"
               },
               {
                 "key": "360",
-                "label": "360 手机卫士"
+                "label": "🔒 360 手机卫士"
               }
             ],
-            "desc": "默认使用 腾讯手机管家"
+            "desc": "🎯 选择短信数据来源\n\n📋 推荐使用腾讯手机管家，兼容性更好"
           },
           {
             "id": "@Kry5ta1.sms_forward.sender_allow",
-            "name": "允许转发的号码的正则字符串",
+            "name": "✅ 允许转发的号码规则",
             "val": "",
             "type": "textarea",
-            "desc": "符合的号码才会转发 例: (18600000000|18611111111) 表示只转发这两个号码. ^186 表示只转发186开头的号码. ^\\d{11}$ 表示只转发11位的号码. 默认为空 允许转发所有号码"
+            "placeholder": "例：(10010|10086) 或 ^186",
+            "desc": "🔍 使用正则表达式匹配允许转发的号码\n\n📝 常用示例：\n• (10010|10086) - 只转发联通和移动客服\n• ^186 - 只转发186开头的号码\n• ^\\d{11}$ - 只转发11位手机号\n\n💡 留空表示允许所有号码"
           },
           {
             "id": "@Kry5ta1.sms_forward.sender_deny",
-            "name": "不允许转发的号码的正则字符串",
+            "name": "❌ 拒绝转发的号码规则",
             "val": "",
             "type": "textarea",
-            "desc": "符合的号码不会转发 其他的号码都会转发"
+            "placeholder": "例：(106|1069) 或 ^95",
+            "desc": "🚫 使用正则表达式匹配拒绝转发的号码\n\n📝 常用示例：\n• (106|1069) - 拒绝转发106开头的营销短信\n• ^95 - 拒绝转发95开头的推销电话\n• 广告|推广 - 拒绝包含广告词的号码\n\n⚠️ 拒绝规则优先级高于允许规则"
           },
           {
             "id": "@Kry5ta1.sms_forward.text_allow",
-            "name": "允许转发的内容的正则字符串",
+            "name": "✅ 允许转发的内容规则",
             "val": "",
             "type": "textarea",
-            "desc": "符合的内容才会转发 例: (码|快递) 表示只允许这包含这俩词的内容. 默认为空 允许转发所有内容"
+            "placeholder": "例：(验证码|快递|银行)",
+            "desc": "🔍 使用正则表达式匹配允许转发的短信内容\n\n📝 常用示例：\n• (验证码|动态码) - 只转发验证码相关短信\n• (快递|物流|配送) - 只转发快递相关短信\n• (银行|支付|账户) - 只转发金融相关短信\n\n💡 留空表示允许所有内容"
           },
           {
             "id": "@Kry5ta1.sms_forward.text_deny",
-            "name": "不允许转发的内容的正则字符串",
-            "val": "",
+            "name": "❌ 拒绝转发的内容规则",
+            "val": "(广告|推广|营销|优惠券|打折|促销)",
             "type": "textarea",
-            "desc": "符合的内容不会转发 其他的内容都会转发"
+            "placeholder": "例：(广告|推广|营销)",
+            "desc": "🚫 使用正则表达式匹配拒绝转发的短信内容\n\n📝 默认拒绝常见营销词汇\n• 广告、推广、营销类短信\n• 优惠券、打折、促销信息\n\n⚠️ 拒绝规则优先级高于允许规则"
           },
           {
             "id": "@Kry5ta1.sms_forward.code_test",
-            "name": "判断内容是否包含验证码的正则字符串",
-            "val": "",
+            "name": "🔍 验证码识别规则",
+            "val": ".*(验证码|动态码|校验码|确认码|安全码)",
             "type": "textarea",
-            "desc": "验证码提取逻辑没有很好的思路 现在需要先判断该内容是否有验证码 再提取验证码. 默认为 .+(码) 表示内容符合 'X码' 这样的格式"
+            "placeholder": "例：.*(验证码|动态码)",
+            "desc": "🎯 判断短信是否包含验证码的规则\n\n📋 默认匹配包含以下关键词的短信：\n• 验证码、动态码、校验码\n• 确认码、安全码\n\n💡 匹配成功后会尝试提取验证码数字"
           },
           {
             "id": "@Kry5ta1.sms_forward.code_get",
-            "name": "从内容提取验证码的正则字符串",
-            "val": "",
+            "name": "🔢 验证码提取规则",
+            "val": "\\d{4,8}",
             "type": "textarea",
-            "desc": "提取的验证码将作为可复制的内容 方便 Bark 复制. 默认为 \\d{4,6} 表示提取4-6位的数字"
+            "placeholder": "例：\\d{4,6}",
+            "desc": "📱 从短信内容中提取验证码的规则\n\n🎯 默认提取4-8位连续数字\n• \\d{4,6} - 提取4-6位数字\n• \\d{6} - 只提取6位数字\n\n💡 提取的验证码可在Bark中长按复制"
           },
           {
             "id": "@Kry5ta1.sms_forward.no_post",
-            "name": "不提交数据给腾讯/360等接口",
+            "name": "🔒 隐私保护模式",
             "val": false,
             "type": "boolean",
-            "desc": "默认为否, 会正常提交. 若开启, 则不会提交任何数据给腾讯/360等接口 保证隐私"
+            "desc": "🛡️ 开启后不会提交任何数据给第三方接口\n\n⚠️ 注意：开启后可能影响某些功能的正常使用\n💡 如果担心隐私泄露，建议开启此选项"
           },
           {
             "id": "@Kry5ta1.sms_forward.replace_num",
-            "name": "替换数字",
+            "name": "🔐 数字脱敏保护",
             "val": true,
             "type": "boolean",
-            "desc": "默认启用. 将提交给腾讯/360等接口的内容中的数字替换为随机数字 防止泄漏"
+            "desc": "🛡️ 将提交给第三方接口的数字替换为随机数字\n\n💡 默认启用，有效防止验证码等敏感信息泄露\n⚠️ 仅在隐私保护模式关闭时生效"
           },
           {
             "id": "@Kry5ta1.sms_forward.title",
-            "name": "通知标题模板",
-            "val": "",
+            "name": "📋 通知标题模板",
+            "val": "📱 [号码]",
             "type": "text",
-            "desc": "默认: [号码], 例: 10010"
+            "placeholder": "例：📱 [号码] 或 短信通知",
+            "desc": "🎨 自定义通知标题格式\n\n📝 可用变量：\n• [号码] - 发送方号码\n• [时间] - 接收时间\n\n💡 默认显示：📱 10010"
           },
           {
             "id": "@Kry5ta1.sms_forward.subtitle",
-            "name": "通知副标题模板",
-            "val": "",
+            "name": "📝 通知副标题模板",
+            "val": "[码][复制提示]",
             "type": "text",
-            "desc": "默认: [码][复制提示], 例: 123456(长按/下拉复制验证码)"
+            "placeholder": "例：🔢 [码] 或 验证码：[码]",
+            "desc": "🎨 自定义通知副标题格式\n\n📝 可用变量：\n• [码] - 提取的验证码\n• [复制提示] - 复制操作提示\n\n💡 默认显示：123456(长按/下拉复制验证码)"
           },
           {
             "id": "@Kry5ta1.sms_forward.body",
-            "name": "通知正文模板",
-            "val": "",
+            "name": "📄 通知正文模板",
+            "val": "[内容]",
             "type": "textarea",
-            "desc": "默认: [内容], 例: 您的验证码为 123456"
+            "placeholder": "例：📨 [内容] 或 短信内容：[内容]",
+            "desc": "🎨 自定义通知正文格式\n\n📝 可用变量：\n• [内容] - 完整短信内容\n• [号码] - 发送方号码\n• [时间] - 接收时间\n\n💡 默认显示完整短信内容"
           },
           {
             "id": "@Kry5ta1.sms_forward.bark",
-            "name": "转发到 Bark/自建服务端 等",
+            "name": "🔔 Bark推送配置",
             "val": "",
             "type": "textarea",
-            "desc": "使用 POST API 发送通知. 只需填入 Bark 服务器地址即可，如: https://api.day.app/YOUR_KEY/push 或自建服务端地址. 脚本会自动发送 JSON 格式的 POST 请求，包含 title、body、copy、autoCopy、sound、isArchive、group 等参数"
+            "placeholder": "https://api.day.app/YOUR_KEY",
+            "desc": "📱 Bark推送服务器配置\n\n🌐 支持的格式：\n• https://api.day.app/YOUR_KEY - 官方服务器\n• https://your-domain.com/YOUR_KEY - 自建服务器\n\n⚠️ 必须以 http:// 或 https:// 开头\n💡 脚本会自动添加 /push 路径和相关参数"
           },
           {
             "id": "@Kry5ta1.sms_forward.keys",
-            "name": "其他配置的 key(英文逗号,分隔)",
+            "name": "🔧 多配置管理",
             "val": "",
             "type": "textarea",
-            "desc": "默认只取 sms_forward 的配置. 设置为 sms_forward-1, sms_forward-2 后, 将同时处理这三个配置"
+            "placeholder": "例：sms_forward-1,sms_forward-2",
+            "desc": "⚙️ 同时处理多个配置的key列表\n\n📝 使用英文逗号分隔多个配置名：\n• sms_forward-1,sms_forward-2\n• work,personal,family\n\n💡 默认只处理 sms_forward 配置\n🎯 适用于区分工作和个人短信的场景"
           }
         ],
         "icons": [

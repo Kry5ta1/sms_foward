@@ -48,16 +48,14 @@ let result
 
   // 获取请求体并解析
   let input = $request.body
-  $.log('ℹ️ 请求')
-  $.log(input)
+  $.log('📥 接收到请求数据')
   try {
     input = JSON.parse(input)  // 尝试解析JSON
+    $.log('✅ 请求数据解析成功')
   } catch (e) {
-    console.log(e)
+    $.log('❌ 请求数据解析失败:', e.message)
     throw new Error('解析请求失败')
   }
-  $.log('ℹ️ 解析后的请求')
-  $.log(input)
   
   // 提取短信内容和发送者
   let text
@@ -73,8 +71,8 @@ let result
   }
   sender = sender == null ? '' : `${sender}`  // 确保sender是字符串
   text = text == null ? '' : `${text}`        // 确保text是字符串
-  console.log(`号码 ${sender}`)
-  console.log(`内容 ${text}`)
+  $.log(`📱 发送号码: ${sender}`)
+  $.log(`📝 短信内容: ${text}`)
 
   // 处理每个配置的函数
   const fn = async (key, index) => {
@@ -99,7 +97,6 @@ let result
     const KEY_SUBTITLE = `@Kry5ta1.${key}.subtitle`   // 副标题模板
     const KEY_BODY = `@Kry5ta1.${key}.body`           // 正文模板
     const KEY_BARK = `@Kry5ta1.${key}.bark`           // Bark通知地址
-    const KEY_PUSHDEER = `@Kry5ta1.${key}.pushdeer`   // PushDeer通知地址
 
     // 获取过滤规则并创建正则表达式
     const senderAllow = $.getdata(KEY_SENDER_ALLOW) || ''
@@ -115,41 +112,37 @@ let result
     let isSenderAllow = true
     let isTextAllow = true
     if (senderAllow) {
-      console.log(`👉🏻 [${index}][${key}] 允许转发的号码的正则字符串 ${senderAllow}`)
-      console.log(`👉🏻 [${index}][${key}] 允许转发的号码的正则 ${senderAllowRegExp}`)
+      $.log(`👉🏻 [${index}][${key}] 检查允许号码规则: ${senderAllow}`)
       if (!senderAllowRegExp.test(sender)) {
-        console.log(`👉🏻 [${index}][${key}] ${sender} 不符合允许转发的号码 ❌不会转发`)
+        $.log(`👉🏻 [${index}][${key}] ${sender} 不符合允许规则 ❌`)
         isSenderAllow = false
       }
     } else if (senderDeny) {
-      console.log(`👉🏻 [${index}][${key}] 不允许转发的号码的正则字符串 ${senderDeny}`)
-      console.log(`👉🏻 [${index}][${key}] 不允许转发的号码的正则 ${senderDenyRegExp}`)
+      $.log(`👉🏻 [${index}][${key}] 检查拒绝号码规则: ${senderDeny}`)
       if (senderDenyRegExp.test(sender)) {
-        console.log(`👉🏻 [${index}][${key}] ${sender} 符合不允许转发的号码 ❌不会转发`)
+        $.log(`👉🏻 [${index}][${key}] ${sender} 符合拒绝规则 ❌`)
         isSenderAllow = false
       }
     }
     
     // 判断内容是否允许转发
     if (textAllow) {
-      console.log(`👉🏻 [${index}][${key}] 允许转发的内容的正则字符串 ${textAllow}`)
-      console.log(`👉🏻 [${index}][${key}] 允许转发的内容的正则 ${textAllowRegExp}`)
+      $.log(`👉🏻 [${index}][${key}] 检查允许内容规则: ${textAllow}`)
       if (!textAllowRegExp.test(text)) {
-        console.log(`👉🏻 [${index}][${key}] ${text} 不符合允许转发的内容 ❌不会转发`)
+        $.log(`👉🏻 [${index}][${key}] 内容不符合允许规则 ❌`)
         isTextAllow = false
       }
     } else if (textDeny) {
-      console.log(`👉🏻 [${index}][${key}] 不允许转发的内容的正则字符串 ${textDeny}`)
-      console.log(`👉🏻 [${index}][${key}] 不允许转发的内容的正则 ${textDenyRegExp}`)
+      $.log(`👉🏻 [${index}][${key}] 检查拒绝内容规则: ${textDeny}`)
       if (textDenyRegExp.test(text)) {
-        console.log(`👉🏻 [${index}][${key}] ${text} 符合不允许转发的内容 ❌不会转发`)
+        $.log(`👉🏻 [${index}][${key}] 内容符合拒绝规则 ❌`)
         isTextAllow = false
       }
     }
     
     // 如果发送者或内容不允许转发，则退出
     if (!isSenderAllow || !isTextAllow) {
-      console.log('已判断号码和内容 ❌ 不会转发')
+      $.log(`👉🏻 [${index}][${key}] 过滤检查未通过，跳过转发`)
       return
     }
     
@@ -167,19 +160,17 @@ let result
     let hasCode
     let code
     if (codeTest) {
-      console.log(`👉🏻 [${index}][${key}] 判断内容是否包含验证码的正则字符串 ${codeTest}`)
-      console.log(`👉🏻 [${index}][${key}] 判断内容是否包含验证码的正则 ${codeTestRegExp}`)
+      $.log(`👉🏻 [${index}][${key}] 验证码检测规则: ${codeTest}`)
       if (codeTestRegExp.test(text)) {
-        console.log(`👉🏻 [${index}][${key}] ${text} 包含验证码 ✅`)
+        $.log(`👉🏻 [${index}][${key}] 检测到验证码内容 ✅`)
         hasCode = true
         if (codeGet) {
-          console.log(`👉🏻 [${index}][${key}] 从内容提取验证码的正则字符串 ${codeGet}`)
-          console.log(`👉🏻 [${index}][${key}] 从内容提取验证码的正则 ${codeGetRegExp}`)
+          $.log(`👉🏻 [${index}][${key}] 验证码提取规则: ${codeGet}`)
           const matched = text.match(codeGetRegExp)
           if (matched) {
             code = matched[0]
             if (code) {
-              console.log(`👉🏻 [${index}][${key}] ${text} 提取到验证码 ${code} ✅`)
+              $.log(`👉🏻 [${index}][${key}] 提取到验证码: ${code} ✅`)
             }
           }
         }
@@ -189,10 +180,10 @@ let result
     // 设置复制内容，优先复制验证码
     let copy = text
     if (code) {
-      console.log(`👉🏻 [${index}][${key}] 判断包含验证码 且提取到验证码 将复制验证码`)
+      $.log(`👉🏻 [${index}][${key}] 将复制验证码到剪贴板`)
       copy = code
     }
-    console.log(`👉🏻 [${index}][${key}] 📋 复制的内容 ${copy}`)
+    $.log(`👉🏻 [${index}][${key}] 📋 复制内容: ${copy}`)
     
     // 准备通知数据
     const msgData = {
@@ -213,12 +204,12 @@ let result
     const subtitle = renderTpl(subtitleTpl, msgData)
     const body = renderTpl(bodyTpl, msgData)
 
-    console.log(`👉🏻 [${index}][${key}] 标题 ${title}`)
-    console.log(`👉🏻 [${index}][${key}] 副标题 ${subtitle}`)
-    console.log(`👉🏻 [${index}][${key}] 正文 ${body}`)
+    $.log(`👉🏻 [${index}][${key}] 📢 标题: ${title}`)
+    $.log(`👉🏻 [${index}][${key}] 📢 副标题: ${subtitle}`)
+    $.log(`👉🏻 [${index}][${key}] 📢 正文: ${body}`)
 
     // 发送通知
-    await notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK })
+    await notify(title, subtitle, body, { copy, KEY_BARK })
     $.log(`👉🏻 [${index}][${key}] 配置结束`)
   }
   
@@ -244,10 +235,10 @@ let result
 
     // 是否替换数字（保护隐私）
     if (String(replaceNnum) !== 'false') {
-      $.log('ℹ️ 替换数字')
-      $.log(`ℹ️ 原内容 ${text}`)
+      $.log('🔒 启用隐私保护，替换数字内容')
+      const originalText = text
       text = text.replace(/\d/g, i => Math.floor(Math.random() * (9 - 1 + 1)) + 1) // 替换为随机数字
-      $.log(`🆕 新内容 ${text}`)
+      $.log(`🔒 隐私保护完成: ${originalText} → ${text}`)
       if (type === 'tencent') {
         lodash_set(result, $.lodash_get(config, `${type}.text`), text)
       } else if (type === '360') {
@@ -257,114 +248,79 @@ let result
   }
 })()
   .catch(e => {
-    console.log(e)
+    $.log('❌ 脚本执行出错:', e.message || e)
     notify(`短信转发`, `❌`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {})
   })
   .finally(() => {
-    console.log(`提交给腾讯/360等接口的数据`)
-    console.log(result)
+    $.log('📤 处理完成，返回结果给原接口')
     $.done(result)  // 完成处理并返回结果
   })
 
 /**
  * 发送通知函数
- * 支持PushDeer和Bark两种通知方式
+ * 支持Bark通知方式
  */
-async function notify(title, subtitle, body, { copy, KEY_PUSHDEER, KEY_BARK }) {
-  console.log("🔴 进入notify函数");
+async function notify(title, subtitle, body, { copy, KEY_BARK }) {
+  $.log("📢 开始发送通知");
   
-  const pushdeer = $.getdata(KEY_PUSHDEER)
   const bark = $.getdata(KEY_BARK)
 
-  console.log(`🔴 Bark配置值: ${bark ? '已配置' : '未配置'}`);
+  $.log(`📢 Bark配置: ${bark ? '已配置' : '未配置'}`);
 
-  if (pushdeer || bark) {
-    // 发送PushDeer通知
-    if (pushdeer) {
-      try {
-        const url = pushdeer.replace('[推送全文]', encodeURIComponent(`${title}\n${subtitle}\n${body}`))
-        console.log(`开始 PushDeer 请求: ${url}`)
-        const res = await $.http.get({ url })
-        // console.log(res)
-        const status = $.lodash_get(res, 'status')
-        $.log('↓ res status')
-        $.log(status)
-        let resBody = String($.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody'))
-        try {
-          resBody = JSON.parse(resBody)
-        } catch (e) {}
-        $.log('↓ res body')
-        console.log($.toStr(resBody))
-        if (!['0', '200'].includes(String($.lodash_get(resBody, 'code'))) && !$.lodash_get(resBody, 'isSuccess')) {
-          throw new Error($.lodash_get(resBody, 'errorMessage') || $.lodash_get(resBody, 'message') || $.lodash_get(resBody, 'msg') || '未知错误')
-        }
-      } catch (e) {
-        console.log(e)
-        $.msg('短信转发', `❌ PushDeer 请求`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {})
-      }
-    }
+  if (bark) {
+    // Bark通知 - 使用POST API
+    $.log(`📢 开始Bark推送: ${bark}`);
     
-    // Bark通知部分 - 使用POST API
-    if (bark) {
-      console.log(`🔴 开始处理Bark请求，基础URL: ${bark}`);
+    try {
+      // 准备POST请求数据
+      const fullContent = `${subtitle}\n${body}`;
+      const payload = {
+        title: title,
+        body: fullContent,
+        copy: copy,           // 复制内容
+        autoCopy: 1,          // 自动复制
+        sound: "true",        // 使用声音提醒
+        isArchive: 1,         // 保存到历史记录
+        group: "短信转发"      // 分组
+      };
+      
+      // 构建请求选项
+      const requestOptions = {
+        url: bark,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8'
+        },
+        body: JSON.stringify(payload)
+      };
+      
+      $.log(`📢 发送Bark请求...`);
+      const res = await $.http.post(requestOptions);
+      
+      // 检查响应
+      const status = $.lodash_get(res, 'status');
+      let resBody = String($.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody'));
       
       try {
-        // 准备POST请求数据
-        const fullContent = `${subtitle}\n${body}`;
-        const payload = {
-          title: title,
-          body: fullContent,
-          copy: copy,           // 复制内容
-          autoCopy: 1,          // 自动复制
-          sound: "true",        // 使用声音提醒
-          isArchive: 1,         // 保存到历史记录
-          group: "短信转发"      // 分组
-        };
-        
-        console.log(`🔴 请求内容: ${JSON.stringify(payload)}`);
-        
-        // 构建请求选项
-        const requestOptions = {
-          url: bark,
-          headers: {
-            'Content-Type': 'application/json; charset=utf-8'
-          },
-          body: JSON.stringify(payload)
-        };
-        
-        console.log(`🔴 开始 bark POST 请求 到 ${bark}`);
-        const res = await $.http.post(requestOptions);
-        
-        // 记录响应信息
-        const status = $.lodash_get(res, 'status');
-        console.log(`🔴 响应状态码: ${status}`);
-        
-        let resBody = String($.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody'));
-        console.log(`🔴 响应内容: ${resBody}`);
-        
-        try {
-          resBody = JSON.parse(resBody);
-        } catch (e) {
-          console.log('🔴 响应不是有效的JSON');
-        }
-        
-        // 检查响应是否成功
-        if (status >= 400 || 
-            (!['0', '200'].includes(String($.lodash_get(resBody, 'code'))) && 
-             !$.lodash_get(resBody, 'isSuccess'))) {
-          throw new Error(`Bark服务器响应错误: ${status}, ${JSON.stringify(resBody)}`);
-        }
+        resBody = JSON.parse(resBody);
       } catch (e) {
-        // 详细记录错误
-        console.log('🔴 Bark POST请求错误:');
-        console.log(JSON.stringify(e));
-        console.log(e.stack || e.toString());
-        $.msg('短信转发', `❌ bark 请求`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {});
+        // 响应不是JSON格式
       }
+      
+      // 检查响应是否成功
+      if (status >= 400 || 
+          (!['0', '200'].includes(String($.lodash_get(resBody, 'code'))) && 
+           !$.lodash_get(resBody, 'isSuccess'))) {
+        throw new Error(`Bark服务器响应错误: ${status}`);
+      }
+      
+      $.log(`📢 Bark推送成功 ✅`);
+    } catch (e) {
+      $.log(`📢 Bark推送失败: ${e.message || e}`);
+      $.msg('短信转发', `❌ Bark推送失败`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {});
     }
   } else {
     // 如果没有配置推送服务，则在本地显示预览
-    console.log('🔴 未配置推送服务，显示本地预览');
+    $.log('📢 未配置推送服务，显示本地预览');
     $.msg(`[无转发 本地预览] ${title}`, subtitle, body);
   }
 }

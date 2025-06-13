@@ -25,7 +25,6 @@
           "@Kry5ta1.sms_forward.title",
           "@Kry5ta1.sms_forward.subtitle",
           "@Kry5ta1.sms_forward.body",
-          "@Kry5ta1.sms_forward.pushdeer",
           "@Kry5ta1.sms_forward.bark",
           "@Kry5ta1.sms_forward.keys"
         ],
@@ -141,13 +140,6 @@
             "desc": "使用 POST API 发送通知. 只需填入 Bark 服务器地址即可，如: https://api.day.app/YOUR_KEY/push 或自建服务端地址. 脚本会自动发送 JSON 格式的 POST 请求，包含 title、body、copy、autoCopy、sound、isArchive、group 等参数"
           },
           {
-            "id": "@Kry5ta1.sms_forward.pushdeer",
-            "name": "转发到 PushDeer/PushPlus 等",
-            "val": "",
-            "type": "textarea",
-            "desc": "[推送全文] 会被自动替换. 形如 https://api2.pushdeer.com/message/push?pushkey=XXXXXXXXXXX&text=[推送全文]"
-          },
-          {
             "id": "@Kry5ta1.sms_forward.keys",
             "name": "其他配置的 key(英文逗号,分隔)",
             "val": "",
@@ -156,120 +148,6 @@
           }
         ],
         "icons": [
-          "https://raw.githubusercontent.com/Kry5ta1/sms_foward/main/asset/1.png",
-          "https://raw.githubusercontent.com/Kry5ta1/sms_foward/main/asset/1.png"
-        ]
-      },
-      {
-        "id": "Kry5ta1.sms_forward-1",
-        "name": "短信转发(1)",
-        "descs_html": [
-          "<a onClick=\"window.location.reload(true);\">刷新</a>"
-        ],
-        "keys": [
-          "@Kry5ta1.sms_forward-1.disabled",
-          "@Kry5ta1.sms_forward-1.sender_allow",
-          "@Kry5ta1.sms_forward-1.sender_deny",
-          "@Kry5ta1.sms_forward-1.text_allow",
-          "@Kry5ta1.sms_forward-1.text_deny",
-          "@Kry5ta1.sms_forward-1.code_test",
-          "@Kry5ta1.sms_forward-1.code_get",
-          "@Kry5ta1.sms_forward-1.title",
-          "@Kry5ta1.sms_forward-1.subtitle",
-          "@Kry5ta1.sms_forward-1.body",
-          "@Kry5ta1.sms_forward-1.pushdeer",
-          "@Kry5ta1.sms_forward-1.bark"
-        ],
-        "author": "Kry5ta1",
-        "repo": "https://github.com/Kry5ta1/sms_foward",
-        "settings": [
-          {
-            "id": "@Kry5ta1.sms_forward-1.disabled",
-            "name": "禁用",
-            "val": false,
-            "type": "boolean",
-            "desc": "默认启用"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.sender_allow",
-            "name": "允许转发的号码的正则字符串",
-            "val": "",
-            "type": "textarea",
-            "desc": "符合的号码才会转发 例: (18600000000|18611111111) 表示只转发这两个号码. ^186 表示只转发186开头的号码. ^\\d{11}$ 表示只转发11位的号码. 默认为空 允许转发所有号码"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.sender_deny",
-            "name": "不允许转发的号码的正则字符串",
-            "val": "",
-            "type": "textarea",
-            "desc": "符合的号码不会转发 其他的号码都会转发"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.text_allow",
-            "name": "允许转发的内容的正则字符串",
-            "val": "",
-            "type": "textarea",
-            "desc": "符合的内容才会转发 例: (码|快递) 表示只允许这包含这俩词的内容. 默认为空 允许转发所有内容"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.text_deny",
-            "name": "不允许转发的内容的正则字符串",
-            "val": "",
-            "type": "textarea",
-            "desc": "符合的内容不会转发 其他的内容都会转发"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.code_test",
-            "name": "判断内容是否包含验证码的正则字符串",
-            "val": "",
-            "type": "textarea",
-            "desc": "验证码提取逻辑没有很好的思路 现在需要先判断该内容是否有验证码 再提取验证码. 默认为 .+(码) 表示内容符合 'X码' 这样的格式"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.code_get",
-            "name": "从内容提取验证码的正则字符串",
-            "val": "",
-            "type": "textarea",
-            "desc": "提取的验证码将作为可复制的内容 方便 Bark 复制. 默认为 \\d{4,6} 表示提取4-6位的数字"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.title",
-            "name": "通知标题模板",
-            "val": "",
-            "type": "text",
-            "desc": "默认: [号码], 例: 10010"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.subtitle",
-            "name": "通知副标题模板",
-            "val": "",
-            "type": "text",
-            "desc": "默认: [码][复制提示], 例: 123456(长按/下拉复制验证码)"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.body",
-            "name": "通知正文模板",
-            "val": "",
-            "type": "textarea",
-            "desc": "默认: [内容], 例: 您的验证码为 123456"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.bark",
-            "name": "转发到 Bark/自建服务端 等",
-            "val": "",
-            "type": "textarea",
-            "desc": "使用 POST API 发送通知. 只需填入 Bark 服务器地址即可，如: https://api.day.app/YOUR_KEY/push 或自建服务端地址. 脚本会自动发送 JSON 格式的 POST 请求，包含 title、body、copy、autoCopy、sound、isArchive、group 等参数"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward-1.pushdeer",
-            "name": "转发到 PushDeer/PushPlus 等",
-            "val": "",
-            "type": "textarea",
-            "desc": "[推送全文] 会被自动替换. 形如 https://api2.pushdeer.com/message/push?pushkey=XXXXXXXXXXX&text=[推送全文]"
-          }
-        ],
-        "icons": [
-          "https://raw.githubusercontent.com/Kry5ta1/sms_foward/main/asset/1.png",
           "https://raw.githubusercontent.com/Kry5ta1/sms_foward/main/asset/1.png"
         ]
       }

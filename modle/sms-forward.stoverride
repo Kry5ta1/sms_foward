@@ -2,6 +2,11 @@ name: "sms-forward"
 author: "Kry5ta1"
 category: "Kry5ta1Hub"
 
+script-providers:
+  sms-forward:
+    url: https://raw.githubusercontent.com/Kry5ta1/sms_foward/refs/heads/main/js/sms-forward.js
+    interval: 86400
+
 http:
   force-http-engine:
     - "jprx.m.qq.com"
@@ -15,8 +20,3 @@ http:
       type: request
       require-body: true
       timeout: 120
-
-script-providers:
-  BoxJs:
-    url: https://raw.githubusercontent.com/Kry5ta1/sms_foward/refs/heads/main/sms-forward.js
-    interval: 86400

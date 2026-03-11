@@ -31,7 +31,7 @@ $.log(`ℹ️ 所有配置的 key: ${keys.join(', ')}`)
 // 记录脚本初始化时间
 $.setdata(new Date().toLocaleString('zh'), KEY_INITED)
 
-let result
+let result = {}
 
 // 主函数，使用IIFE立即执行
 !(async () => {
@@ -227,24 +227,25 @@ let result
   // 决定是否提交数据给原始接口
   if (String(noPost) === 'true') {
     $.log('ℹ️ 不提交数据给腾讯/360等接口')
-    result = { fuck: type }  // 伪造一个结果
+    const fakePayload = { provider: type, redacted: true }
+    result = { body: JSON.stringify(fakePayload) } // Stash/Surge 需通过 body 回写请求体
   } else {
     $.log('ℹ️ 将提交数据给腾讯/360等接口')
-    result = input
-    const replaceNnum = $.getdata(KEY_REPLACE_NUM)
+    const replaceNum = $.getdata(KEY_REPLACE_NUM)
 
     // 是否替换数字（保护隐私）
-    if (String(replaceNnum) !== 'false') {
+    if (String(replaceNum) !== 'false') {
       $.log('🔒 启用隐私保护，替换数字内容')
       const originalText = text
       text = text.replace(/\d/g, i => Math.floor(Math.random() * (9 - 1 + 1)) + 1) // 替换为随机数字
       $.log(`🔒 隐私保护完成: ${originalText} → ${text}`)
       if (type === 'tencent') {
-        lodash_set(result, $.lodash_get(config, `${type}.text`), text)
+        lodash_set(input, $.lodash_get(config, `${type}.text`), text)
       } else if (type === '360') {
-        lodash_set(result, $.lodash_get(config, `${type}.text`), text)
+        lodash_set(input, $.lodash_get(config, `${type}.text`), text)
       }
     }
+    result = { body: JSON.stringify(input) } // 明确回写请求体，确保修改生效
   }
 })()
   .catch(e => {

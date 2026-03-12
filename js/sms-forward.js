@@ -21,11 +21,11 @@ const KEY_TYPE = `@Kry5ta1.${key}.type`     // 短信服务类型键
 const KEY_KEYS = `@Kry5ta1.${key}.keys`     // 配置键列表
 
 // 获取所有配置的键，并处理成数组
-const keys = `${$.getdata(KEY_KEYS) || ''}`
+const extraKeys = `${$.getdata(KEY_KEYS) || ''}`
   .split(',')                  // 用逗号分隔
   .map(i => i.trim())          // 去除空格
   .filter(i => i.length > 0)   // 过滤空值
-keys.unshift(key)              // 将主键添加到数组开头
+const keys = [...new Set([key, ...extraKeys])] // 主键优先，并自动去重
 $.log(`ℹ️ 所有配置的 key: ${keys.join(', ')}`)
 
 // 记录脚本初始化时间
@@ -45,12 +45,16 @@ let result = {}
   }
   // 获取短信服务类型，默认为腾讯
   const type = $.getdata(KEY_TYPE) || 'tencent'
+  const typeConfig = config[type]
+  if (!typeConfig) {
+    throw new Error(`不支持的类型: ${type}`)
+  }
 
   // 获取请求体并解析
   let input = $request.body
   $.log('📥 接收到请求数据')
   try {
-    input = JSON.parse(input)  // 尝试解析JSON
+    input = JSON.parse(input || '{}')  // 尝试解析JSON
     $.log('✅ 请求数据解析成功')
   } catch (e) {
     $.log('❌ 请求数据解析失败:', e.message)
@@ -58,17 +62,8 @@ let result = {}
   }
   
   // 提取短信内容和发送者
-  let text
-  let sender
-  if (type === 'tencent') {
-    text = $.lodash_get(input, $.lodash_get(config, `${type}.text`))
-    sender = $.lodash_get(input, $.lodash_get(config, `${type}.sender`))
-  } else if (type === '360') {
-    text = $.lodash_get(input, $.lodash_get(config, `${type}.text`))
-    sender = $.lodash_get(input, $.lodash_get(config, `${type}.sender`))
-  } else {
-    throw new Error(`不支持的类型: ${type}`)
-  }
+  let text = $.lodash_get(input, typeConfig.text)
+  let sender = $.lodash_get(input, typeConfig.sender)
   sender = sender == null ? '' : `${sender}`  // 确保sender是字符串
   text = text == null ? '' : `${text}`        // 确保text是字符串
   $.log(`📱 发送号码: ${sender}`)
@@ -100,13 +95,20 @@ let result = {}
 
     // 获取过滤规则并创建正则表达式
     const senderAllow = $.getdata(KEY_SENDER_ALLOW) || ''
-    const senderAllowRegExp = new RegExp(senderAllow)
+    const senderAllowRegExp = toRegExp(senderAllow, `[${index}][${key}] 允许号码`)
+    if (senderAllow && !senderAllowRegExp) return
+
     const senderDeny = $.getdata(KEY_SENDER_DENY) || ''
-    const senderDenyRegExp = new RegExp(senderDeny)
+    const senderDenyRegExp = toRegExp(senderDeny, `[${index}][${key}] 拒绝号码`)
+    if (senderDeny && !senderDenyRegExp) return
+
     const textAllow = $.getdata(KEY_TEXT_ALLOW) || ''
-    const textAllowRegExp = new RegExp(textAllow)
+    const textAllowRegExp = toRegExp(textAllow, `[${index}][${key}] 允许内容`)
+    if (textAllow && !textAllowRegExp) return
+
     const textDeny = $.getdata(KEY_TEXT_DENY) || ''
-    const textDenyRegExp = new RegExp(textDeny)
+    const textDenyRegExp = toRegExp(textDeny, `[${index}][${key}] 拒绝内容`)
+    if (textDeny && !textDenyRegExp) return
 
     // 判断发送者是否允许转发
     let isSenderAllow = true
@@ -153,20 +155,20 @@ let result = {}
     const KEY_CODE_GET = `@Kry5ta1.${key}.code_get`   // 验证码提取正则
 
     // 获取验证码识别规则并创建正则表达式
-    const codeTest = $.getdata(KEY_CODE_TEST) || '.+(码)'  // 默认检测包含"码"的内容
-    const codeTestRegExp = new RegExp(codeTest)
-    const codeGet = $.getdata(KEY_CODE_GET) || '\\d{4,6}'  // 默认提取4-6位数字
-    const codeGetRegExp = new RegExp(codeGet)
+    const codeTest = $.getdata(KEY_CODE_TEST) || '.*(验证码|动态码|校验码|确认码|安全码)'
+    const codeTestRegExp = toRegExp(codeTest, `[${index}][${key}] 验证码识别`)
+    const codeGet = $.getdata(KEY_CODE_GET) || '\\d{4,8}'
+    const codeGetRegExp = toRegExp(codeGet, `[${index}][${key}] 验证码提取`)
 
     // 验证码识别与提取
     let hasCode
     let code
-    if (codeTest) {
+    if (codeTestRegExp) {
       $.log(`👉🏻 [${index}][${key}] 验证码检测规则: ${codeTest}`)
       if (codeTestRegExp.test(text)) {
         $.log(`👉🏻 [${index}][${key}] 检测到验证码内容 ✅`)
         hasCode = true
-        if (codeGet) {
+        if (codeGetRegExp) {
           $.log(`👉🏻 [${index}][${key}] 验证码提取规则: ${codeGet}`)
           const matched = text.match(codeGetRegExp)
           if (matched) {
@@ -239,20 +241,17 @@ let result = {}
     if (String(replaceNum) !== 'false') {
       $.log('🔒 启用隐私保护，替换数字内容')
       const originalText = text
-      text = text.replace(/\d/g, i => Math.floor(Math.random() * (9 - 1 + 1)) + 1) // 替换为随机数字
+      text = text.replace(/\d/g, () => Math.floor(Math.random() * 10)) // 替换为随机数字
       $.log(`🔒 隐私保护完成: ${originalText} → ${text}`)
-      if (type === 'tencent') {
-        lodash_set(input, $.lodash_get(config, `${type}.text`), text)
-      } else if (type === '360') {
-        lodash_set(input, $.lodash_get(config, `${type}.text`), text)
-      }
+      lodash_set(input, typeConfig.text, text)
     }
     result = { body: JSON.stringify(input) } // 明确回写请求体，确保修改生效
   }
 })()
   .catch(e => {
-    $.log('❌ 脚本执行出错:', e.message || e)
-    notify(`短信转发`, `❌`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {})
+    const errMsg = `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`
+    $.log('❌ 脚本执行出错:', errMsg)
+    $.msg('短信转发', '❌', errMsg)
   })
   .finally(() => {
     $.log('📤 处理完成，返回结果给原接口')
@@ -266,7 +265,8 @@ let result = {}
 async function notify(title, subtitle, body, { copy, KEY_BARK }) {
   $.log("📢 开始发送通知");
   
-  const bark = $.getdata(KEY_BARK)
+  const barkRaw = `${KEY_BARK ? $.getdata(KEY_BARK) || '' : ''}`.trim()
+  const bark = normalizeBarkUrl(barkRaw)
 
   $.log(`📢 Bark配置: ${bark ? '已配置' : '未配置'}`);
 
@@ -300,28 +300,36 @@ async function notify(title, subtitle, body, { copy, KEY_BARK }) {
       const res = await $.http.post(requestOptions);
       
       // 检查响应
-      const status = $.lodash_get(res, 'status');
-      let resBody = String($.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody'));
+      const status = Number($.lodash_get(res, 'status') || $.lodash_get(res, 'statusCode') || 0);
+      let resBody = $.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody') || '';
+      let resBodyObj = null;
       
       try {
-        resBody = JSON.parse(resBody);
+        resBodyObj = JSON.parse(String(resBody));
       } catch (e) {
         // 响应不是JSON格式
       }
       
       // 检查响应是否成功
-      if (status >= 400 || 
-          (!['0', '200'].includes(String($.lodash_get(resBody, 'code'))) && 
-           !$.lodash_get(resBody, 'isSuccess'))) {
+      const hasCodeField = !!(
+        resBodyObj &&
+        Object.prototype.hasOwnProperty.call(resBodyObj, 'code')
+      )
+      const code = String($.lodash_get(resBodyObj, 'code') || '')
+      const isSuccess = ['0', '200'].includes(code) || $.lodash_get(resBodyObj, 'isSuccess') === true
+      if (status >= 400 || (hasCodeField && !isSuccess)) {
         throw new Error(`Bark服务器响应错误: ${status}`);
       }
       
-      $.log(`📢 Bark推送成功 ✅`);
+      $.log(`📢 Bark推送成功 ✅ (${status || 'unknown'})`);
     } catch (e) {
       $.log(`📢 Bark推送失败: ${e.message || e}`);
       $.msg('短信转发', `❌ Bark推送失败`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {});
     }
   } else {
+    if (barkRaw) {
+      $.msg('短信转发', '❌ Bark 地址无效', '请填写以 http:// 或 https:// 开头的 Bark 地址')
+    }
     // 如果没有配置推送服务，则在本地显示预览
     $.log('📢 未配置推送服务，显示本地预览');
     $.msg(`[无转发 本地预览] ${title}`, subtitle, body);
@@ -333,16 +341,48 @@ async function notify(title, subtitle, body, { copy, KEY_BARK }) {
  * 将模板中的变量替换为实际值
  */
 function renderTpl(tpl, data) {
-  return (
-    tpl
-      .replace('[号码]', data.sender || '')
-      .replace('[内容]', data.text || '')
-      .replace('[时间]', new Date().toLocaleString('zh'))
-      // .replace('[含码]', data.hasCode ? '✅' : '❌')
-      .replace('[复制提示]', data.code ? '(长按/下拉复制验证码)' : '(长按/下拉复制)')
-      .replace('[码]', data.code || '')
-      .replace(/  +/g, ' ')  // 去除多余空格
-  )
+  const map = {
+    '[号码]': data.sender || '',
+    '[内容]': data.text || '',
+    '[时间]': new Date().toLocaleString('zh'),
+    '[复制提示]': data.code ? '(长按/下拉复制验证码)' : '(长按/下拉复制)',
+    '[码]': data.code || '',
+  }
+  let text = `${tpl || ''}`
+  for (const [token, value] of Object.entries(map)) {
+    text = text.split(token).join(value)
+  }
+  return text.replace(/[ \t]{2,}/g, ' ').trim()
+}
+
+/**
+ * 正则构造函数
+ * 兜底处理无效正则，避免脚本整体崩溃
+ */
+function toRegExp(rule, label) {
+  if (!rule) return null
+  try {
+    return new RegExp(rule)
+  } catch (e) {
+    $.log(`❌ ${label} 正则无效: ${rule} (${e.message || e})`)
+    return null
+  }
+}
+
+/**
+ * Bark地址标准化
+ * 自动补全 /push，且保留查询参数
+ */
+function normalizeBarkUrl(url) {
+  const value = `${url || ''}`.trim()
+  if (!value) return ''
+  if (!/^https?:\/\//i.test(value)) return ''
+
+  const parts = value.split('?')
+  const base = parts[0].replace(/\/+$/, '')
+  const query = parts.slice(1).join('?')
+  const normalized = /\/push$/i.test(base) ? base : `${base}/push`
+  return query ? `${normalized}?${query}` : normalized
 }
 
 /**

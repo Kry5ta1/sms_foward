@@ -155,8 +155,8 @@
             "name": "🔔 Bark推送配置",
             "val": "",
             "type": "text",
-            "placeholder": "https://api.day.app/YOUR_KEY 或 https://api.day.app/YOUR_KEY/push",
-            "desc": "📱 Bark推送服务器配置\n\n🌐 支持的格式：\n• https://api.day.app/YOUR_KEY - 官方服务器\n• https://your-domain.com/YOUR_KEY - 自建服务器\n\n⚠️ 必须以 http:// 或 https:// 开头\n💡 脚本会自动补全 /push 路径，无需手动填写"
+            "placeholder": "https://api.day.app/YOUR_KEY",
+            "desc": "📱 Bark推送服务器配置\n\n🌐 支持的格式：\n• https://api.day.app/YOUR_KEY - 官方服务器\n• https://your-domain.com/YOUR_KEY - 自建服务器\n\n⚠️ 必须以 http:// 或 https:// 开头\n⚠️ 请直接填写 key 地址，不要手动追加 /push（脚本会自动修正误填的 /<key>/push）"
           },
           {
             "id": "@Kry5ta1.sms_forward.keys",

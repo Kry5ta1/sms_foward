@@ -371,7 +371,7 @@ function toRegExp(rule, label) {
 
 /**
  * Bark地址标准化
- * 自动补全 /push，且保留查询参数
+ * 保留用户原始地址，并修正常见误填格式
  */
 function normalizeBarkUrl(url) {
   const value = `${url || ''}`.trim()
@@ -379,10 +379,19 @@ function normalizeBarkUrl(url) {
   if (!/^https?:\/\//i.test(value)) return ''
 
   const parts = value.split('?')
-  const base = parts[0].replace(/\/+$/, '')
+  let base = parts[0].replace(/\/+$/, '')
   const query = parts.slice(1).join('?')
-  const normalized = /\/push$/i.test(base) ? base : `${base}/push`
-  return query ? `${normalized}?${query}` : normalized
+
+  // 常见误填：把 key 地址写成 /<key>/push，会被 Bark 兼容路由当成正文 "push"
+  // 这里自动修正成 /<key>
+  const keyPushPattern = /^(https?:\/\/[^/]+\/[^/?#]+)\/push$/i
+  const matched = base.match(keyPushPattern)
+  if (matched) {
+    base = matched[1]
+    $.log(`ℹ️ 检测到 Bark 地址为 /<key>/push，已自动修正为: ${base}`)
+  }
+
+  return query ? `${base}?${query}` : base
 }
 
 /**

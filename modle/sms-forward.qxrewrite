@@ -1,0 +1,9 @@
+#!name=短信转发
+#!desc=https://github.com/Kry5ta1/sms_foward
+
+[rewrite_local]
+^https?:\/\/scan\.call\.f\.360\.cn\/ios_message\.php url script-request-body https://raw.githubusercontent.com/Kry5ta1/sms_foward/main/js/sms-forward.js
+^https?:\/\/jprx\.m\.qq\.com\/forward url script-request-body https://raw.githubusercontent.com/Kry5ta1/sms_foward/main/js/sms-forward.js
+
+[mitm]
+hostname = scan.call.f.360.cn, jprx.m.qq.com

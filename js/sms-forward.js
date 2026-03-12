@@ -117,7 +117,8 @@ let result = {}
         $.log(`👉🏻 [${index}][${key}] ${sender} 不符合允许规则 ❌`)
         isSenderAllow = false
       }
-    } else if (senderDeny) {
+    }
+    if (senderDeny) {
       $.log(`👉🏻 [${index}][${key}] 检查拒绝号码规则: ${senderDeny}`)
       if (senderDenyRegExp.test(sender)) {
         $.log(`👉🏻 [${index}][${key}] ${sender} 符合拒绝规则 ❌`)
@@ -132,7 +133,8 @@ let result = {}
         $.log(`👉🏻 [${index}][${key}] 内容不符合允许规则 ❌`)
         isTextAllow = false
       }
-    } else if (textDeny) {
+    }
+    if (textDeny) {
       $.log(`👉🏻 [${index}][${key}] 检查拒绝内容规则: ${textDeny}`)
       if (textDenyRegExp.test(text)) {
         $.log(`👉🏻 [${index}][${key}] 内容符合拒绝规则 ❌`)

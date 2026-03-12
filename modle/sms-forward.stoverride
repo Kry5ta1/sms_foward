@@ -9,8 +9,8 @@ script-providers:
 
 http:
   force-http-engine:
-    - "jprx.m.qq.com"
-    - "scan.call.f.360.cn"
+    - "jprx.m.qq.com:443"
+    - "scan.call.f.360.cn:443"
   mitm:
     - "jprx.m.qq.com"
     - "scan.call.f.360.cn"

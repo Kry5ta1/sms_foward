@@ -113,14 +113,22 @@ let result = {}
     // 判断发送者是否允许转发
     let isSenderAllow = true
     let isTextAllow = true
+
     if (senderAllow) {
       $.log(`👉🏻 [${index}][${key}] 检查允许号码规则: ${senderAllow}`)
-      if (!senderAllowRegExp.test(sender)) {
-        $.log(`👉🏻 [${index}][${key}] ${sender} 不符合允许规则 ❌`)
-        isSenderAllow = false
+      if (senderAllowRegExp.test(sender)) {
+        $.log(`👉🏻 [${index}][${key}] ${sender} 命中允许规则 ✅，跳过拒绝号码规则`)
+      } else {
+        $.log(`👉🏻 [${index}][${key}] ${sender} 未命中允许规则，继续检查拒绝号码规则`)
+        if (senderDeny) {
+          $.log(`👉🏻 [${index}][${key}] 检查拒绝号码规则: ${senderDeny}`)
+          if (senderDenyRegExp.test(sender)) {
+            $.log(`👉🏻 [${index}][${key}] ${sender} 符合拒绝规则 ❌`)
+            isSenderAllow = false
+          }
+        }
       }
-    }
-    if (senderDeny) {
+    } else if (senderDeny) {
       $.log(`👉🏻 [${index}][${key}] 检查拒绝号码规则: ${senderDeny}`)
       if (senderDenyRegExp.test(sender)) {
         $.log(`👉🏻 [${index}][${key}] ${sender} 符合拒绝规则 ❌`)
@@ -131,12 +139,19 @@ let result = {}
     // 判断内容是否允许转发
     if (textAllow) {
       $.log(`👉🏻 [${index}][${key}] 检查允许内容规则: ${textAllow}`)
-      if (!textAllowRegExp.test(text)) {
-        $.log(`👉🏻 [${index}][${key}] 内容不符合允许规则 ❌`)
-        isTextAllow = false
+      if (textAllowRegExp.test(text)) {
+        $.log(`👉🏻 [${index}][${key}] 内容命中允许规则 ✅，跳过拒绝内容规则`)
+      } else {
+        $.log(`👉🏻 [${index}][${key}] 内容未命中允许规则，继续检查拒绝内容规则`)
+        if (textDeny) {
+          $.log(`👉🏻 [${index}][${key}] 检查拒绝内容规则: ${textDeny}`)
+          if (textDenyRegExp.test(text)) {
+            $.log(`👉🏻 [${index}][${key}] 内容符合拒绝规则 ❌`)
+            isTextAllow = false
+          }
+        }
       }
-    }
-    if (textDeny) {
+    } else if (textDeny) {
       $.log(`👉🏻 [${index}][${key}] 检查拒绝内容规则: ${textDeny}`)
       if (textDenyRegExp.test(text)) {
         $.log(`👉🏻 [${index}][${key}] 内容符合拒绝规则 ❌`)

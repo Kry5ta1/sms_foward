@@ -1,0 +1,32 @@
+name: Nicegram Unlock
+desc: Nicegram for Stash
+
+http:
+  mitm:
+    - "nicegram.cloud"
+    - "restore-access.indream.app"
+    - "api.mbrx.app"
+
+  script:
+    - match: ^https?:\/\/nicegram\.cloud\/api\/v\d\/(user\/info|unblock-feature\/get-settings)
+      name: Nicegram Unlock
+      type: response
+      require-body: true
+      timeout: 20
+
+    - match: ^https?:\/\/restore-access\.indream\.app\/restoreAccess
+      name: Nicegram Unlock
+      type: response
+      require-body: true
+      timeout: 20
+
+    - match: ^https?:\/\/api\.mbrx\.app\/v\d\/purchase\/ios\/transaction
+      name: Nicegram Unlock
+      type: response
+      require-body: true
+      timeout: 20
+
+script-providers:
+  Nicegram Unlock:
+    url: https://raw.githubusercontent.com/chxm1023/Rewrite/refs/heads/main/nicegram.stash.js
+    interval: 86400

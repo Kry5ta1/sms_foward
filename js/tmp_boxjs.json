@@ -1,175 +1,283 @@
 {
-    "id": "Kry5ta1.sms_foward.sub",
-    "name": "sms_foward 的应用订阅",
-    "author": "Kry5ta1",
-    "icon": "https://raw.githubusercontent.com/Kry5ta1/sms_foward/main/asset/1.png",
-    "repo": "https://github.com/Kry5ta1/sms_foward",
-    "apps": [
-      {
-        "id": "Kry5ta1.sms_forward",
-        "name": "短信转发",
-        "descs_html": [
-          "<div style='margin-bottom: 10px;'>",
-          "<a onClick=\"window.location.reload(true);\" style='margin-right: 15px; color: #007AFF; text-decoration: none;'>🔄 刷新配置</a>",
-          "<a href=\"https://github.com/Kry5ta1/sms_foward\" target=\"_blank\" style='margin-right: 15px; color: #007AFF; text-decoration: none;'>📖 使用说明</a>",
-          "<a href=\"https://regex101.com\" target=\"_blank\" style='margin-right: 15px; color: #007AFF; text-decoration: none;'>🔧 正则测试</a>",
-          "<a href=\"https://api.day.app\" target=\"_blank\" style='color: #007AFF; text-decoration: none;'>🔔 Bark官网</a>",
-          "</div>",
-          "<div style='background: #f8f9fa; padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #007AFF;'>",
-          "<h4 style='margin: 0 0 8px 0; color: #333;'>📱 快速配置指南</h4>",
-          "<p style='margin: 0; color: #666; font-size: 14px;'>1️⃣ 选择短信服务类型（推荐腾讯手机管家）<br/>2️⃣ 配置Bark推送地址<br/>3️⃣ 设置过滤规则（可选）<br/>4️⃣ 自定义通知模板（可选）</p>",
-          "</div>"
-        ],
-        "keys": [
-          "@Kry5ta1.sms_forward.disabled",
-          "@Kry5ta1.sms_forward.type",
-          "@Kry5ta1.sms_forward.sender_allow",
-          "@Kry5ta1.sms_forward.sender_deny",
-          "@Kry5ta1.sms_forward.text_allow",
-          "@Kry5ta1.sms_forward.text_deny",
-          "@Kry5ta1.sms_forward.code_test",
-          "@Kry5ta1.sms_forward.code_get",
-          "@Kry5ta1.sms_forward.replace_num",
-          "@Kry5ta1.sms_forward.no_post",
-          "@Kry5ta1.sms_forward.title",
-          "@Kry5ta1.sms_forward.subtitle",
-          "@Kry5ta1.sms_forward.body",
-          "@Kry5ta1.sms_forward.bark",
-          "@Kry5ta1.sms_forward.keys"
-        ],
-        "author": "Kry5ta1",
-        "repo": "https://github.com/Kry5ta1/sms_foward",
-        "settings": [
-          {
-            "id": "@Kry5ta1.sms_forward.disabled",
-            "name": "🔴 禁用脚本",
-            "val": false,
-            "type": "boolean",
-            "desc": "⚠️ 开启后将完全停止短信转发功能\n\n💡 默认启用，建议保持开启状态"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.type",
-            "name": "📱 短信服务类型",
-            "val": "tencent",
-            "type": "selects",
-            "items": [
-              {
-                "key": "tencent",
-                "label": "🛡️ 腾讯手机管家"
-              },
-              {
-                "key": "360",
-                "label": "🔒 360 手机卫士"
-              }
-            ],
-            "desc": "🎯 选择短信数据来源\n\n📋 推荐使用腾讯手机管家，兼容性更好"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.sender_allow",
-            "name": "✅ 允许转发的号码规则",
-            "val": "",
-            "type": "textarea",
-            "placeholder": "例：(10010|10086) 或 ^186",
-            "desc": "🔍 使用正则表达式匹配允许转发的号码\n\n📝 常用示例：\n• (10010|10086) - 只转发联通和移动客服\n• ^186 - 只转发186开头的号码\n• ^\\d{11}$ - 只转发11位手机号\n\n💡 留空表示允许所有号码"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.sender_deny",
-            "name": "❌ 拒绝转发的号码规则",
-            "val": "",
-            "type": "textarea",
-            "placeholder": "例：(106|1069) 或 ^95",
-            "desc": "🚫 使用正则表达式匹配拒绝转发的号码\n\n📝 常用示例：\n• (106|1069) - 拒绝转发106开头的营销短信\n• ^95 - 拒绝转发95开头的推销电话\n• 广告|推广 - 拒绝包含广告词的号码\n\n⚠️ 拒绝规则优先级高于允许规则"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.text_allow",
-            "name": "✅ 允许转发的内容规则",
-            "val": "",
-            "type": "textarea",
-            "placeholder": "例：(验证码|快递|银行)",
-            "desc": "🔍 使用正则表达式匹配允许转发的短信内容\n\n📝 常用示例：\n• (验证码|动态码) - 只转发验证码相关短信\n• (快递|物流|配送) - 只转发快递相关短信\n• (银行|支付|账户) - 只转发金融相关短信\n\n💡 留空表示允许所有内容"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.text_deny",
-            "name": "❌ 拒绝转发的内容规则",
-            "val": "(广告|推广|营销|优惠券|打折|促销)",
-            "type": "textarea",
-            "placeholder": "例：(广告|推广|营销)",
-            "desc": "🚫 使用正则表达式匹配拒绝转发的短信内容\n\n📝 默认拒绝常见营销词汇\n• 广告、推广、营销类短信\n• 优惠券、打折、促销信息\n\n⚠️ 拒绝规则优先级高于允许规则"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.code_test",
-            "name": "🔍 验证码识别规则",
-            "val": ".*(验证码|动态码|校验码|确认码|安全码)",
-            "type": "textarea",
-            "placeholder": "例：.*(验证码|动态码)",
-            "desc": "🎯 判断短信是否包含验证码的规则\n\n📋 默认匹配包含以下关键词的短信：\n• 验证码、动态码、校验码\n• 确认码、安全码\n\n💡 匹配成功后会尝试提取验证码数字"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.code_get",
-            "name": "🔢 验证码提取规则",
-            "val": "\\d{4,8}",
-            "type": "textarea",
-            "placeholder": "例：\\d{4,6}",
-            "desc": "📱 从短信内容中提取验证码的规则\n\n🎯 默认提取4-8位连续数字\n• \\d{4,6} - 提取4-6位数字\n• \\d{6} - 只提取6位数字\n\n💡 提取的验证码可在Bark中长按复制"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.no_post",
-            "name": "🔒 隐私保护模式",
-            "val": false,
-            "type": "boolean",
-            "desc": "🛡️ 开启后不会提交任何数据给第三方接口\n\n⚠️ 注意：开启后可能影响某些功能的正常使用\n💡 如果担心隐私泄露，建议开启此选项"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.replace_num",
-            "name": "🔐 数字脱敏保护",
-            "val": true,
-            "type": "boolean",
-            "desc": "🛡️ 将提交给第三方接口的数字替换为随机数字\n\n💡 默认启用，有效防止验证码等敏感信息泄露\n⚠️ 仅在隐私保护模式关闭时生效"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.title",
-            "name": "📋 通知标题模板",
-            "val": "📱 [号码]",
-            "type": "text",
-            "placeholder": "例：📱 [号码] 或 短信通知",
-            "desc": "🎨 自定义通知标题格式\n\n📝 可用变量：\n• [号码] - 发送方号码\n• [时间] - 接收时间\n\n💡 默认显示：📱 10010"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.subtitle",
-            "name": "📝 通知副标题模板",
-            "val": "[码][复制提示]",
-            "type": "text",
-            "placeholder": "例：🔢 [码] 或 验证码：[码]",
-            "desc": "🎨 自定义通知副标题格式\n\n📝 可用变量：\n• [码] - 提取的验证码\n• [复制提示] - 复制操作提示\n\n💡 默认显示：123456(长按/下拉复制验证码)"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.body",
-            "name": "📄 通知正文模板",
-            "val": "[内容]",
-            "type": "textarea",
-            "placeholder": "例：📨 [内容] 或 短信内容：[内容]",
-            "desc": "🎨 自定义通知正文格式\n\n📝 可用变量：\n• [内容] - 完整短信内容\n• [号码] - 发送方号码\n• [时间] - 接收时间\n\n💡 默认显示完整短信内容"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.bark",
-            "name": "🔔 Bark推送配置",
-            "val": "",
-            "type": "text",
-            "placeholder": "https://api.day.app/YOUR_KEY",
-            "desc": "📱 Bark推送服务器配置\n\n🌐 支持的格式：\n• https://api.day.app/YOUR_KEY - 官方服务器\n• https://your-domain.com/YOUR_KEY - 自建服务器\n\n⚠️ 必须以 http:// 或 https:// 开头\n⚠️ 请直接填写 key 地址，不要手动追加 /push（脚本会自动修正误填的 /<key>/push）"
-          },
-          {
-            "id": "@Kry5ta1.sms_forward.keys",
-            "name": "🔧 多配置管理",
-            "val": "",
-            "type": "textarea",
-            "placeholder": "例：sms_forward-1,sms_forward-2",
-            "desc": "⚙️ 同时处理多个配置的key列表\n\n📝 使用英文逗号分隔多个配置名：\n• sms_forward-1,sms_forward-2\n• work,personal,family\n\n💡 默认只处理 sms_forward 配置\n🧹 重复的 key 会自动去重\n🎯 适用于区分工作和个人短信的场景"
-          }
-        ],
-        "icons": [
-          "https://raw.githubusercontent.com/Kry5ta1/sms_foward/main/asset/1.png"
-        ]
-      }
-    ]
-  }
+  "id": "Kry5ta1.sms_foward.sub",
+  "name": "短信转发 · BoxJS 配置",
+  "author": "Kry5ta1",
+  "repo": "https://github.com/Kry5ta1/sms_foward",
+  "apps": [
+    {
+      "id": "Kry5ta1.sms_forward",
+      "name": "短信转发",
+      "descs_html": [
+        "<div style=\"padding:12px;border:1px solid currentColor;border-radius:10px;line-height:1.7\"><strong>📱 短信转发</strong><br>选择短信来源 → 填写 Bark 地址 → 保存配置。首次使用可先保持其余默认值。</div>",
+        "<p><strong>设置顺序</strong><br>① 基础与推送　② 失败重试　③ 过滤规则<br>④ 原接口隐私　⑤ 验证码与通知　⑥ 多配置</p>",
+        "<p>修改后请使用 BoxJS 的「保存」按钮，下次短信请求生效。此页面用于配置，不会主动发送测试短信。</p>",
+        "<p><a href=\"https://github.com/Kry5ta1/sms_foward\" target=\"_blank\" rel=\"noopener noreferrer\">项目仓库</a> · <a href=\"https://github.com/Finb/Bark\" target=\"_blank\" rel=\"noopener noreferrer\">Bark 说明</a></p>"
+      ],
+      "keys": [
+        "@Kry5ta1.sms_forward.disabled",
+        "@Kry5ta1.sms_forward.type",
+        "@Kry5ta1.sms_forward.bark",
+        "@Kry5ta1.sms_forward.bark_retries",
+        "@Kry5ta1.sms_forward.bark_timeout",
+        "@Kry5ta1.sms_forward.bark_retry_delay",
+        "@Kry5ta1.sms_forward.sender_deny",
+        "@Kry5ta1.sms_forward.sender_allow",
+        "@Kry5ta1.sms_forward.text_deny",
+        "@Kry5ta1.sms_forward.text_allow",
+        "@Kry5ta1.sms_forward.no_post",
+        "@Kry5ta1.sms_forward.replace_num",
+        "@Kry5ta1.sms_forward.code_test",
+        "@Kry5ta1.sms_forward.code_get",
+        "@Kry5ta1.sms_forward.title",
+        "@Kry5ta1.sms_forward.subtitle",
+        "@Kry5ta1.sms_forward.body",
+        "@Kry5ta1.sms_forward.keys"
+      ],
+      "author": "Kry5ta1",
+      "repo": "https://github.com/Kry5ta1/sms_foward",
+      "settings": [
+        {
+          "id": "@Kry5ta1.sms_forward.disabled",
+          "name": "① 基础 · 禁用脚本",
+          "val": false,
+          "type": "boolean",
+          "desc": "关闭此开关才能正常转发；开启后跳过全部处理，包括原接口隐私处理。默认关闭。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.type",
+          "name": "① 基础 · 短信来源",
+          "val": "tencent",
+          "type": "selects",
+          "items": [
+            {
+              "key": "tencent",
+              "label": "🛡️ 腾讯手机管家"
+            },
+            {
+              "key": "360",
+              "label": "🔒 360 手机卫士"
+            }
+          ],
+          "desc": "选择实际使用的短信服务。此选项不会自动安装代理工具的重写规则。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.bark",
+          "name": "① 推送 · Bark 地址",
+          "val": "",
+          "type": "text",
+          "placeholder": "https://api.day.app/YOUR_KEY",
+          "desc": "填写 Bark App 提供的完整推送地址，支持官方或自建服务，建议使用 HTTPS。无需追加 /push；留空时仅显示本地预览。地址含设备密钥，请勿公开。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.bark_retries",
+          "name": "② 容错 · 失败后重试次数",
+          "val": "2",
+          "type": "selects",
+          "items": [
+            {
+              "key": "0",
+              "label": "0 次"
+            },
+            {
+              "key": "1",
+              "label": "1 次"
+            },
+            {
+              "key": "2",
+              "label": "2 次（默认）"
+            },
+            {
+              "key": "3",
+              "label": "3 次"
+            }
+          ],
+          "desc": "首次发送之外的重试次数。默认重试 2 次，最多发送 3 次；0 为不重试。网络错误、超时、408/429 与服务端错误可重试，其余 4xx 不重试。受共享 16 秒预算限制，可能提前结束；超时后重试可能产生重复通知。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.bark_timeout",
+          "name": "② 容错 · 单次请求超时",
+          "val": "3",
+          "type": "selects",
+          "items": [
+            {
+              "key": "1",
+              "label": "1 秒"
+            },
+            {
+              "key": "2",
+              "label": "2 秒"
+            },
+            {
+              "key": "3",
+              "label": "3 秒（默认）"
+            },
+            {
+              "key": "4",
+              "label": "4 秒"
+            }
+          ],
+          "desc": "每次 Bark 请求的等待上限，默认 3 秒。所有配置并行推送，共享 16 秒总预算；剩余时间不足时会缩短等待或停止重试。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.bark_retry_delay",
+          "name": "② 容错 · 重试间隔基数",
+          "val": "300",
+          "type": "selects",
+          "items": [
+            {
+              "key": "100",
+              "label": "100 毫秒"
+            },
+            {
+              "key": "200",
+              "label": "200 毫秒"
+            },
+            {
+              "key": "300",
+              "label": "300 毫秒（默认）"
+            },
+            {
+              "key": "400",
+              "label": "400 毫秒"
+            },
+            {
+              "key": "500",
+              "label": "500 毫秒"
+            },
+            {
+              "key": "600",
+              "label": "600 毫秒"
+            },
+            {
+              "key": "700",
+              "label": "700 毫秒"
+            },
+            {
+              "key": "800",
+              "label": "800 毫秒"
+            },
+            {
+              "key": "900",
+              "label": "900 毫秒"
+            },
+            {
+              "key": "1000",
+              "label": "1000 毫秒"
+            }
+          ],
+          "desc": "默认基数 300 毫秒，连续重试按 300、600、1200 毫秒递增。单次等待最多 4000 毫秒；服务器 Retry-After 可延长等待，仍受共享 16 秒预算限制。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.sender_deny",
+          "name": "③ 过滤 · 拒绝号码",
+          "val": "",
+          "type": "textarea",
+          "placeholder": "^106",
+          "desc": "正则表达式，匹配的号码不转发；留空不过滤号码。例如 ^106 匹配以 106 开头的号码。",
+          "rows": 2,
+          "autoGrow": true
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.sender_allow",
+          "name": "③ 过滤 · 号码放行例外",
+          "val": "",
+          "type": "textarea",
+          "placeholder": "^(10010|10086)$",
+          "desc": "命中后跳过「拒绝号码」规则，仍需通过内容过滤。这不是白名单：未命中的号码仍按拒绝规则判断；留空无例外。",
+          "rows": 2,
+          "autoGrow": true
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.text_deny",
+          "name": "③ 过滤 · 拒绝内容",
+          "val": "(广告|推广|营销|优惠券|打折|促销)",
+          "type": "textarea",
+          "placeholder": "广告|推广|营销",
+          "desc": "正则表达式，匹配的短信不转发；留空不过滤内容。默认过滤常见营销词，可能误拦正常短信，可配合下方例外。",
+          "rows": 2,
+          "autoGrow": true
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.text_allow",
+          "name": "③ 过滤 · 内容放行例外",
+          "val": "",
+          "type": "textarea",
+          "placeholder": "验证码|动态码",
+          "desc": "命中后跳过「拒绝内容」规则，仍需通过号码过滤。这不是白名单：未命中的内容仍按拒绝规则判断；留空无例外。",
+          "rows": 2,
+          "autoGrow": true
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.no_post",
+          "name": "④ 隐私 · 替换原接口请求体",
+          "val": false,
+          "type": "boolean",
+          "desc": "开启后将发往腾讯/360 原接口的请求体替换为脱敏占位数据，可能影响原服务。不阻断网络请求，也不隐藏请求头或网址；Bark 仍接收原始短信。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.replace_num",
+          "name": "④ 隐私 · 原接口短信数字替换",
+          "val": true,
+          "type": "boolean",
+          "desc": "默认开启，将原接口请求体中短信正文的数字随机替换，不影响 Bark 通知。仅在上方开关关闭时生效；不是完整匿名化，其他文字、号码和字段仍可能包含隐私。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.code_test",
+          "name": "⑤ 验证码 · 识别规则",
+          "val": ".*(验证码|动态码|校验码|确认码|安全码)",
+          "type": "textarea",
+          "placeholder": ".*(验证码|动态码|校验码|确认码|安全码)",
+          "desc": "先用此正则判断是否为验证码短信；命中后使用下方规则提取。留空使用默认规则。",
+          "rows": 2,
+          "autoGrow": true
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.code_get",
+          "name": "⑤ 验证码 · 提取规则",
+          "val": "\\d{4,8}",
+          "type": "textarea",
+          "placeholder": "\\d{4,8}",
+          "desc": "提取首个匹配结果，默认匹配 4–8 位连续数字。识别成功后，Bark 复制内容优先使用验证码；否则使用短信全文。留空使用默认规则。",
+          "rows": 2,
+          "autoGrow": true
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.title",
+          "name": "⑤ 通知 · 标题模板",
+          "val": "📱 [号码]",
+          "type": "text",
+          "placeholder": "📱 [号码]",
+          "desc": "可用变量：[号码]、[内容]、[时间]、[码]、[复制提示]。留空回退为 [号码]。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.subtitle",
+          "name": "⑤ 通知 · 副标题模板",
+          "val": "[码][复制提示]",
+          "type": "text",
+          "placeholder": "[码][复制提示]",
+          "desc": "可用变量同上。Bark 中副标题会放在正文之前；无验证码时 [码] 为空。留空回退为 [码][复制提示]。"
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.body",
+          "name": "⑤ 通知 · 正文模板",
+          "val": "[内容]",
+          "type": "textarea",
+          "placeholder": "[内容]",
+          "desc": "可用变量同上，支持换行。[内容] 为原始短信全文；留空回退为 [内容]。",
+          "rows": 2,
+          "autoGrow": true
+        },
+        {
+          "id": "@Kry5ta1.sms_forward.keys",
+          "name": "⑥ 高级 · 额外配置名",
+          "val": "",
+          "type": "textarea",
+          "placeholder": "work,personal",
+          "desc": "英文逗号分隔，默认主配置 sms_forward 始终执行，重复项自动去重。此处仅引用已有配置，不会创建配置；需另行设置 @Kry5ta1.<配置名> 下的 Bark 地址、过滤与模板。共享主配置的短信来源和原接口隐私设置。",
+          "rows": 2,
+          "autoGrow": true
+        }
+      ]
+    }
+  ]
+}

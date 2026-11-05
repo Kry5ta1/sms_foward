@@ -1,448 +1,202 @@
-// 定义脚本的主键名
+// 腾讯手机管家与 360 手机卫士的短信请求转发。
 const key = 'sms_forward'
-
-// 配置不同短信服务提供商的数据结构映射
-const config = {
-  tencent: {
-    sender: 'query.sender',    // 腾讯短信发送者路径
-    text: 'query.message.text', // 腾讯短信内容路径
-  },
-  360: {
-    sender: 'query.sender',    // 360短信发送者路径
-    text: 'query.message.text', // 360短信内容路径
-  },
-}
-// 初始化环境
 const $ = new Env(key)
-
-// 定义存储配置的键名常量
-const KEY_INITED = `@Kry5ta1.${key}.inited` // 初始化状态键
-const KEY_TYPE = `@Kry5ta1.${key}.type`     // 短信服务类型键
-const KEY_KEYS = `@Kry5ta1.${key}.keys`     // 配置键列表
-
-// 获取所有配置的键，并处理成数组
-const extraKeys = `${$.getdata(KEY_KEYS) || ''}`
-  .split(',')                  // 用逗号分隔
-  .map(i => i.trim())          // 去除空格
-  .filter(i => i.length > 0)   // 过滤空值
-const keys = [...new Set([key, ...extraKeys])] // 主键优先，并自动去重
-$.log(`ℹ️ 所有配置的 key: ${keys.join(', ')}`)
-
-// 记录脚本初始化时间
-$.setdata(new Date().toLocaleString('zh'), KEY_INITED)
-
-let result = {}
+// 本地预览可以显示短信，但不将通知内容再次写入日志。
+$.isMuteLog = true
+const prefix = name => `@Kry5ta1.${name}.`
+const get = (name, field) => $.getdata(prefix(name) + field)
+const enabled = value => String(value) === 'true'
+const config = {
+  tencent: { sender: 'query.sender', text: 'query.message.text' },
+  360: { sender: 'query.sender', text: 'query.message.text' },
+}
+// 留出宿主回写请求的时间，多个配置共享预算且并行处理。
+const deadline = Date.now() + 16000
 let result = {}
 
-// 主函数，使用IIFE立即执行
 !(async () => {
-  // 检查是否禁用脚本
-  const KEY_DISABLED = `@Kry5ta1.${key}.disabled`
-  const disabled = $.getdata(KEY_DISABLED)
+  if (enabled(get(key, 'disabled'))) return
+  $.setdata(new Date().toLocaleString('zh'), prefix(key) + 'inited')
+  const noPost = enabled(get(key, 'no_post'))
+  // 即使解析或转发失败，已启用的去内容模式也不能回退到原始正文。
+  if (noPost) result = { body: JSON.stringify({ redacted: true }) }
+  const type = get(key, 'type') || 'tencent'
+  const mapping = config[type]
+  if (!mapping) throw new Error('不支持的短信服务类型，请检查 BoxJS 配置')
+  if (typeof $request === 'undefined' || !$request.body) {
+    throw new Error('未收到短信请求体，请通过短信请求重写触发脚本')
+  }
+  let input
+  try { input = JSON.parse($request.body) } catch (_) {
+    throw new Error('请求体不是有效 JSON，未执行转发')
+  }
+  const rawText = $.lodash_get(input, mapping.text)
+  const rawSender = $.lodash_get(input, mapping.sender)
+  if (typeof rawText !== 'string' || !rawText.trim()) {
+    throw new Error('请求中没有有效短信内容，未执行转发')
+  }
+  const text = rawText
+  const sender = rawSender == null ? '' : String(rawSender)
 
-  if (String(disabled) === 'true') {
-    $.log('ℹ️ 已禁用')
+  // 先准备隐私回写结果，后续任一推送失败均不影响此结果。
+  if (noPost) {
+    result = { body: JSON.stringify({ provider: type, redacted: true }) }
+  } else {
+    if (String(get(key, 'replace_num')) !== 'false') {
+      $.lodash_set(input, mapping.text, text.replace(/\d/g, () => Math.floor(Math.random() * 10)))
+    }
+    result = { body: JSON.stringify(input) }
+  }
+  const extraKeys = String(get(key, 'keys') || '').split(',').map(value => value.trim()).filter(Boolean)
+  const keys = [...new Set([key, ...extraKeys])]
+  await Promise.all(keys.map(async name => {
+    try { await forward(name, sender, text) } catch (_) {
+      // 不打印异常原文，网络异常可能含设备密钥或短信正文。
+      $.log('❌ 一项转发配置处理失败，其他配置不受影响')
+      $.msg('短信转发', '配置处理失败', '请检查过滤正则、通知模板和 Bark 地址')
+    }
+  }))
+})().catch(error => {
+  $.log(`❌ ${error.message}`)
+  $.msg('短信转发', '处理失败', error.message)
+}).finally(() => $.done(result))
+
+async function forward(name, sender, text) {
+  if (enabled(get(name, 'disabled'))) return
+  if (!passesFilter(name, 'sender', sender) || !passesFilter(name, 'text', text)) {
+    $.log('ℹ️ 已按过滤规则跳过转发')
     return
   }
-  // 获取短信服务类型，默认为腾讯
-  const type = $.getdata(KEY_TYPE) || 'tencent'
-  const typeConfig = config[type]
-  if (!typeConfig) {
-    throw new Error(`不支持的类型: ${type}`)
+  const codeTest = new RegExp(get(name, 'code_test') || '.*(验证码|动态码|校验码|确认码|安全码)')
+  const codeGet = new RegExp(get(name, 'code_get') || '\\d{4,8}')
+  const matched = codeTest.test(text) ? text.match(codeGet) : null
+  const code = matched ? matched[0] : ''
+  const data = { sender, text, code }
+  const template = (field, fallback) => {
+    const value = get(name, field)
+    return renderTpl(value == null || value === '' ? fallback : value, data)
   }
-
-  // 获取请求体并解析
-  let input = $request.body
-  $.log('📥 接收到请求数据')
-  try {
-    input = JSON.parse(input || '{}')  // 尝试解析JSON
-    $.log('✅ 请求数据解析成功')
-  } catch (e) {
-    $.log('❌ 请求数据解析失败:', e.message)
-    throw new Error('解析请求失败')
+  const title = template('title', '[号码]')
+  const subtitle = template('subtitle', '[码][复制提示]')
+  const body = template('body', '[内容]')
+  const barkRaw = String(get(name, 'bark') || '').trim()
+  if (!barkRaw) {
+    $.msg(`[无转发 本地预览] ${title}`, subtitle, body)
+    return
   }
-  
-  // 提取短信内容和发送者
-  let text = $.lodash_get(input, typeConfig.text)
-  let sender = $.lodash_get(input, typeConfig.sender)
-  sender = sender == null ? '' : `${sender}`  // 确保sender是字符串
-  text = text == null ? '' : `${text}`        // 确保text是字符串
-  $.log(`📱 发送号码: ${sender}`)
-  $.log(`📝 短信内容: ${text}`)
-
-  // 处理每个配置的函数
-  const fn = async (key, index) => {
-    $.log(`👉🏻 [${index}][${key}] 配置开始`)
-    const KEY_DISABLED = `@Kry5ta1.${key}.disabled`
-    const disabled = $.getdata(KEY_DISABLED)
-
-    // 跳过禁用的配置
-    if (String(disabled) === 'true') {
-      $.log(`👉🏻 [${index}][${key}] 配置已禁用`)
-      return
-    }
-
-    // 定义过滤规则的键名
-    const KEY_SENDER_ALLOW = `@Kry5ta1.${key}.sender_allow` // 允许的发送者
-    const KEY_SENDER_DENY = `@Kry5ta1.${key}.sender_deny`   // 拒绝的发送者
-    const KEY_TEXT_ALLOW = `@Kry5ta1.${key}.text_allow`     // 允许的内容
-    const KEY_TEXT_DENY = `@Kry5ta1.${key}.text_deny`       // 拒绝的内容
-
-    // 定义通知模板的键名
-    const KEY_TITLE = `@Kry5ta1.${key}.title`         // 标题模板
-    const KEY_SUBTITLE = `@Kry5ta1.${key}.subtitle`   // 副标题模板
-    const KEY_BODY = `@Kry5ta1.${key}.body`           // 正文模板
-    const KEY_BARK = `@Kry5ta1.${key}.bark`           // Bark通知地址
-
-    // 获取过滤规则并创建正则表达式
-    const senderAllow = $.getdata(KEY_SENDER_ALLOW) || ''
-    const senderAllowRegExp = toRegExp(senderAllow, `[${index}][${key}] 允许号码`)
-    if (senderAllow && !senderAllowRegExp) return
-
-    const senderDeny = $.getdata(KEY_SENDER_DENY) || ''
-    const senderDenyRegExp = toRegExp(senderDeny, `[${index}][${key}] 拒绝号码`)
-    if (senderDeny && !senderDenyRegExp) return
-
-    const textAllow = $.getdata(KEY_TEXT_ALLOW) || ''
-    const textAllowRegExp = toRegExp(textAllow, `[${index}][${key}] 允许内容`)
-    if (textAllow && !textAllowRegExp) return
-
-    const textDeny = $.getdata(KEY_TEXT_DENY) || ''
-    const textDenyRegExp = toRegExp(textDeny, `[${index}][${key}] 拒绝内容`)
-    if (textDeny && !textDenyRegExp) return
-
-    // 判断发送者是否允许转发
-    let isSenderAllow = true
-    let isTextAllow = true
-
-    if (senderAllow) {
-      $.log(`👉🏻 [${index}][${key}] 检查允许号码规则: ${senderAllow}`)
-      if (senderAllowRegExp.test(sender)) {
-        $.log(`👉🏻 [${index}][${key}] ${sender} 命中允许规则 ✅，跳过拒绝号码规则`)
-      } else {
-        $.log(`👉🏻 [${index}][${key}] ${sender} 未命中允许规则，继续检查拒绝号码规则`)
-        if (senderDeny) {
-          $.log(`👉🏻 [${index}][${key}] 检查拒绝号码规则: ${senderDeny}`)
-          if (senderDenyRegExp.test(sender)) {
-            $.log(`👉🏻 [${index}][${key}] ${sender} 符合拒绝规则 ❌`)
-            isSenderAllow = false
-          }
-        }
-      }
-    } else if (senderDeny) {
-      $.log(`👉🏻 [${index}][${key}] 检查拒绝号码规则: ${senderDeny}`)
-      if (senderDenyRegExp.test(sender)) {
-        $.log(`👉🏻 [${index}][${key}] ${sender} 符合拒绝规则 ❌`)
-        isSenderAllow = false
-      }
-    }
-    
-    // 判断内容是否允许转发
-    if (textAllow) {
-      $.log(`👉🏻 [${index}][${key}] 检查允许内容规则: ${textAllow}`)
-      if (textAllowRegExp.test(text)) {
-        $.log(`👉🏻 [${index}][${key}] 内容命中允许规则 ✅，跳过拒绝内容规则`)
-      } else {
-        $.log(`👉🏻 [${index}][${key}] 内容未命中允许规则，继续检查拒绝内容规则`)
-        if (textDeny) {
-          $.log(`👉🏻 [${index}][${key}] 检查拒绝内容规则: ${textDeny}`)
-          if (textDenyRegExp.test(text)) {
-            $.log(`👉🏻 [${index}][${key}] 内容符合拒绝规则 ❌`)
-            isTextAllow = false
-          }
-        }
-      }
-    } else if (textDeny) {
-      $.log(`👉🏻 [${index}][${key}] 检查拒绝内容规则: ${textDeny}`)
-      if (textDenyRegExp.test(text)) {
-        $.log(`👉🏻 [${index}][${key}] 内容符合拒绝规则 ❌`)
-        isTextAllow = false
-      }
-    }
-    
-    // 如果发送者或内容不允许转发，则退出
-    if (!isSenderAllow || !isTextAllow) {
-      $.log(`👉🏻 [${index}][${key}] 过滤检查未通过，跳过转发`)
-      return
-    }
-    
-    // 验证码识别相关配置
-    const KEY_CODE_TEST = `@Kry5ta1.${key}.code_test` // 验证码判断正则
-    const KEY_CODE_GET = `@Kry5ta1.${key}.code_get`   // 验证码提取正则
-
-    // 获取验证码识别规则并创建正则表达式
-    const codeTest = $.getdata(KEY_CODE_TEST) || '.*(验证码|动态码|校验码|确认码|安全码)'
-    const codeTestRegExp = toRegExp(codeTest, `[${index}][${key}] 验证码识别`)
-    const codeGet = $.getdata(KEY_CODE_GET) || '\\d{4,8}'
-    const codeGetRegExp = toRegExp(codeGet, `[${index}][${key}] 验证码提取`)
-
-    // 验证码识别与提取
-    let hasCode
-    let code
-    if (codeTestRegExp) {
-      $.log(`👉🏻 [${index}][${key}] 验证码检测规则: ${codeTest}`)
-      if (codeTestRegExp.test(text)) {
-        $.log(`👉🏻 [${index}][${key}] 检测到验证码内容 ✅`)
-        hasCode = true
-        if (codeGetRegExp) {
-          $.log(`👉🏻 [${index}][${key}] 验证码提取规则: ${codeGet}`)
-          const matched = text.match(codeGetRegExp)
-          if (matched) {
-            code = matched[0]
-            if (code) {
-              $.log(`👉🏻 [${index}][${key}] 提取到验证码: ${code} ✅`)
-            }
-          }
-        }
-      }
-    }
-    
-    // 设置复制内容，优先复制验证码
-    let copy = text
-    if (code) {
-      $.log(`👉🏻 [${index}][${key}] 将复制验证码到剪贴板`)
-      copy = code
-    }
-    $.log(`👉🏻 [${index}][${key}] 📋 复制内容: ${copy}`)
-    
-    // 准备通知数据
-    const msgData = {
-      sender,
-      text,
-      hasCode,
-      code,
-      copy,
-    }
-    
-    // 获取通知模板
-    const titleTpl = $.getdata(KEY_TITLE) || '[号码]'
-    const subtitleTpl = $.getdata(KEY_SUBTITLE) || '[码][复制提示]'
-    const bodyTpl = $.getdata(KEY_BODY) || '[内容]'
-
-    // 渲染通知模板
-    const title = renderTpl(titleTpl, msgData)
-    const subtitle = renderTpl(subtitleTpl, msgData)
-    const body = renderTpl(bodyTpl, msgData)
-
-    $.log(`👉🏻 [${index}][${key}] 📢 标题: ${title}`)
-    $.log(`👉🏻 [${index}][${key}] 📢 副标题: ${subtitle}`)
-    $.log(`👉🏻 [${index}][${key}] 📢 正文: ${body}`)
-
-    // 发送通知
-    await notify(title, subtitle, body, { copy, KEY_BARK })
-    $.log(`👉🏻 [${index}][${key}] 配置结束`)
-  }
-  
-  // 遍历所有配置并处理
-  for (const [index, key] of keys.entries()) {
-    await fn(key, index)
-  }
-
-  // 处理隐私相关配置
-  const KEY_REPLACE_NUM = `@Kry5ta1.${key}.replace_num` // 替换数字配置
-  const KEY_NO_POST = `@Kry5ta1.${key}.no_post`         // 不提交数据配置
-
-  const noPost = $.getdata(KEY_NO_POST)
-
-  // 决定是否提交数据给原始接口
-  if (String(noPost) === 'true') {
-    $.log('ℹ️ 不提交数据给腾讯/360等接口')
-    const fakePayload = { provider: type, redacted: true }
-    result = { body: JSON.stringify(fakePayload) } // Stash/Surge 需通过 body 回写请求体
-    const fakePayload = { provider: type, redacted: true }
-    result = { body: JSON.stringify(fakePayload) } // Stash/Surge 需通过 body 回写请求体
-  } else {
-    $.log('ℹ️ 将提交数据给腾讯/360等接口')
-    const replaceNum = $.getdata(KEY_REPLACE_NUM)
-    const replaceNum = $.getdata(KEY_REPLACE_NUM)
-
-    // 是否替换数字（保护隐私）
-    if (String(replaceNum) !== 'false') {
-    if (String(replaceNum) !== 'false') {
-      $.log('🔒 启用隐私保护，替换数字内容')
-      const originalText = text
-      text = text.replace(/\d/g, () => Math.floor(Math.random() * 10)) // 替换为随机数字
-      $.log(`🔒 隐私保护完成: ${originalText} → ${text}`)
-      if (type === 'tencent') {
-        lodash_set(input, $.lodash_get(config, `${type}.text`), text)
-      } else if (type === '360') {
-        lodash_set(input, $.lodash_get(config, `${type}.text`), text)
-      }
-    }
-    result = { body: JSON.stringify(input) } // 明确回写请求体，确保修改生效
-  }
-})()
-  .catch(e => {
-    const errMsg = `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`
-    $.log('❌ 脚本执行出错:', errMsg)
-    $.msg('短信转发', '❌', errMsg)
-  })
-  .finally(() => {
-    $.log('📤 处理完成，返回结果给原接口')
-    $.done(result)  // 完成处理并返回结果
-  })
-
-/**
- * 发送通知函数
- * 支持Bark通知方式
- */
-async function notify(title, subtitle, body, { copy, KEY_BARK }) {
-  $.log("📢 开始发送通知");
-  
-  const barkRaw = `${KEY_BARK ? $.getdata(KEY_BARK) || '' : ''}`.trim()
   const bark = normalizeBarkUrl(barkRaw)
-
-  $.log(`📢 Bark配置: ${bark ? '已配置' : '未配置'}`);
-
-  if (bark) {
-    // Bark通知 - 使用POST API
-    $.log(`📢 开始Bark推送: ${bark}`);
-    
-    try {
-      // 准备POST请求数据
-      const fullContent = `${subtitle}\n${body}`;
-      const payload = {
-        title: title,
-        body: fullContent,
-        copy: copy,           // 复制内容
-        autoCopy: 1,          // 自动复制
-        sound: "true",        // 使用声音提醒
-        isArchive: 1,         // 保存到历史记录
-        group: "短信转发"      // 分组
-      };
-      
-      // 构建请求选项
-      const requestOptions = {
-        url: bark,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        body: JSON.stringify(payload)
-      };
-      
-      $.log(`📢 发送Bark请求...`);
-      const res = await $.http.post(requestOptions);
-      
-      // 检查响应
-      const status = Number($.lodash_get(res, 'status') || $.lodash_get(res, 'statusCode') || 0);
-      let resBody = $.lodash_get(res, 'body') || $.lodash_get(res, 'rawBody') || '';
-      let resBodyObj = null;
-      
-      try {
-        resBodyObj = JSON.parse(String(resBody));
-      } catch (e) {
-        // 响应不是JSON格式
-      }
-      
-      // 检查响应是否成功
-      const hasCodeField = !!(
-        resBodyObj &&
-        Object.prototype.hasOwnProperty.call(resBodyObj, 'code')
-      )
-      const code = String($.lodash_get(resBodyObj, 'code') || '')
-      const isSuccess = ['0', '200'].includes(code) || $.lodash_get(resBodyObj, 'isSuccess') === true
-      if (status >= 400 || (hasCodeField && !isSuccess)) {
-        throw new Error(`Bark服务器响应错误: ${status}`);
-      }
-      
-      $.log(`📢 Bark推送成功 ✅ (${status || 'unknown'})`);
-    } catch (e) {
-      $.log(`📢 Bark推送失败: ${e.message || e}`);
-      $.msg('短信转发', `❌ Bark推送失败`, `${$.lodash_get(e, 'message') || $.lodash_get(e, 'error') || e}`, {});
-    }
-  } else {
-    if (barkRaw) {
-      $.msg('短信转发', '❌ Bark 地址无效', '请填写以 http:// 或 https:// 开头的 Bark 地址')
-    }
-    // 如果没有配置推送服务，则在本地显示预览
-    $.log('📢 未配置推送服务，显示本地预览');
-    $.msg(`[无转发 本地预览] ${title}`, subtitle, body);
+  if (!bark) {
+    $.msg('短信转发', 'Bark 地址无效', '请填写完整的 http(s)://服务器/设备密钥 地址')
+    return
   }
+  const payload = { title, body: `${subtitle}\n${body}`, copy: code || text, autoCopy: 1, isArchive: 1, group: '短信转发' }
+  await notify(bark, payload, {
+    retries: boundedNumber(get(name, 'bark_retries'), 2, 0, 3),
+    timeout: boundedNumber(get(name, 'bark_timeout'), 3, 1, 4) * 1000,
+    delay: boundedNumber(get(name, 'bark_retry_delay'), 300, 100, 1000),
+  })
 }
 
-/**
- * 渲染模板函数
- * 将模板中的变量替换为实际值
- */
-function renderTpl(tpl, data) {
-  const map = {
-    '[号码]': data.sender || '',
-    '[内容]': data.text || '',
+// 保留原有语义：允许规则是拒绝规则的例外，并不是严格白名单。
+function passesFilter(name, field, value) {
+  const allow = get(name, field + '_allow') || ''
+  const deny = get(name, field + '_deny') || ''
+  const allowRegex = allow ? new RegExp(allow) : null
+  const denyRegex = deny ? new RegExp(deny) : null
+  return Boolean(allowRegex && allowRegex.test(value)) || !denyRegex || !denyRegex.test(value)
+}
+
+function boundedNumber(value, fallback, min, max) {
+  if (value == null || String(value).trim() === '') return fallback
+  const number = Number(value)
+  return Number.isFinite(number) ? Math.min(max, Math.max(min, Math.floor(number))) : fallback
+}
+
+async function notify(url, payload, options) {
+  let attempts = 0
+  let reason = '处理时间预算已用完'
+  while (attempts <= options.retries && Date.now() < deadline) {
+    attempts++
+    let retryable = true
+    let retryAfter = 0
+    try {
+      const timeout = Math.min(options.timeout, deadline - Date.now())
+      const response = await postWithTimeout({
+        url,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(payload),
+      }, timeout)
+      const status = Number(response && (response.statusCode || response.status))
+      let data
+      try {
+        const body = response.body == null ? response.rawBody : response.body
+        data = typeof body === 'object' && body !== null && !Array.isArray(body) ? body : JSON.parse(String(body))
+      } catch (_) { data = null }
+      const rawCode = data && data.code
+      const code = (typeof rawCode === 'number' || (typeof rawCode === 'string' && /^\d+$/.test(rawCode))) ? Number(rawCode) : null
+      const accepted = data && (code === 200 || code === 0 || (!Object.prototype.hasOwnProperty.call(data, 'code') && data.isSuccess === true))
+      if (status >= 200 && status < 300 && accepted) {
+        $.log(`✅ Bark 推送成功（第 ${attempts} 次）`)
+        return true
+      }
+      reason = status >= 200 && status < 300 ? 'Bark 业务响应失败或格式无效' : `HTTP ${status || '未知'}`
+      // 鉴权/地址/参数错误重复请求无益；超时、限流和服务端错误可重试。
+      const permanent = value => value >= 400 && value < 500 && value !== 408 && value !== 429
+      retryable = !permanent(status) && !(status >= 200 && status < 300 && permanent(code))
+      const headers = response.headers || {}
+      const header = Object.keys(headers).find(name => name.toLowerCase() === 'retry-after')
+      if (header) {
+        const value = headers[header]
+        retryAfter = /^\d+(\.\d+)?$/.test(String(value)) ? Number(value) * 1000 : Math.max(0, Date.parse(value) - Date.now())
+        if (!Number.isFinite(retryAfter)) retryAfter = 0
+      }
+    } catch (_) {
+      reason = '网络错误或请求超时'
+    }
+    $.log(`⚠️ Bark 第 ${attempts} 次失败：${reason}`)
+    if (!retryable || attempts > options.retries) break
+    const delay = Math.max(Math.min(options.delay * Math.pow(2, attempts - 1), 4000), retryAfter)
+    if (Date.now() + delay >= deadline) break
+    await $.wait(delay)
+  }
+  $.msg('短信转发', 'Bark 推送失败', `已尝试 ${attempts} 次：${reason}。请检查网络、设备密钥和服务状态。`)
+  return false
+}
+
+// 手动计时兜底：部分宿主不执行 HTTP timeout，迟到的响应不能再次完成脚本。
+// 超时不代表服务端未收到，重试仍可能产生重复通知。
+function postWithTimeout(options, timeout) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('请求超时')), Math.max(1, timeout))
+    // Surge/Loon 的 timeout 单位为秒；Quantumult X 依赖上面的计时兜底。
+    if ($.isSurge() || $.isLoon()) options.timeout = timeout / 1000
+    if ($.isNode()) { options.timeout = { request: timeout }; options.retry = { limit: 0 }; options.throwHttpErrors = false }
+    Promise.resolve().then(() => $.http.post(options)).then(
+      response => { clearTimeout(timer); resolve(response) },
+      error => { clearTimeout(timer); reject(error) }
+    )
+  })
+}
+
+function renderTpl(template, data) {
+  const values = {
+    '[号码]': data.sender,
+    '[内容]': data.text,
     '[时间]': new Date().toLocaleString('zh'),
     '[复制提示]': data.code ? '(长按/下拉复制验证码)' : '(长按/下拉复制)',
-    '[码]': data.code || '',
+    '[码]': data.code,
   }
-  let text = `${tpl || ''}`
-  for (const [token, value] of Object.entries(map)) {
-    text = text.split(token).join(value)
-  }
-  return text.replace(/[ \t]{2,}/g, ' ').trim()
+  // 一次替换，避免短信原文内的占位符被再次展开。
+  return String(template).replace(/\[(号码|内容|时间|复制提示|码)\]/g, token => values[token]).trim()
 }
 
-/**
- * 正则构造函数
- * 兜底处理无效正则，避免脚本整体崩溃
- */
-function toRegExp(rule, label) {
-  if (!rule) return null
-  try {
-    return new RegExp(rule)
-  } catch (e) {
-    $.log(`❌ ${label} 正则无效: ${rule} (${e.message || e})`)
-    return null
-  }
-}
-
-/**
- * Bark地址标准化
- * 保留用户原始地址，并修正常见误填格式
- */
-function normalizeBarkUrl(url) {
-  const value = `${url || ''}`.trim()
-  if (!value) return ''
-  if (!/^https?:\/\//i.test(value)) return ''
-
+function normalizeBarkUrl(value) {
+  // 不输出包含设备密钥的地址；不接受凭据、片段、空白和缺少设备路径的地址。
+  if (!/^https?:\/\/[^\s/?#@]+\/[^\s?#]+(?:\?[^\s#]*)?$/i.test(value)) return ''
   const parts = value.split('?')
-  let base = parts[0].replace(/\/+$/, '')
-  const query = parts.slice(1).join('?')
-
-  // 常见误填：把 key 地址写成 /<key>/push，会被 Bark 兼容路由当成正文 "push"
-  // 这里自动修正成 /<key>
-  const keyPushPattern = /^(https?:\/\/[^/]+\/[^/?#]+)\/push$/i
-  const matched = base.match(keyPushPattern)
-  if (matched) {
-    base = matched[1]
-    $.log(`ℹ️ 检测到 Bark 地址为 /<key>/push，已自动修正为: ${base}`)
-  }
-
-  return query ? `${base}?${query}` : base
-}
-
-/**
- * lodash_set函数
- * 用于安全地设置对象深层属性的值
- */
-function lodash_set(obj, path, value) {
-  if (Object(obj) !== obj) return obj // 当obj不是对象时直接返回
-  // 如果path不是数组，则转换为数组
-  if (!Array.isArray(path)) path = path.toString().match(/[^.[\]]+/g) || []
-  path.slice(0, -1).reduce(
-    (
-      a,
-      c,
-      i // 遍历路径中除最后一个元素外的所有元素
-    ) =>
-      Object(a[c]) === a[c] // 检查键是否存在且值为对象
-        ? // 存在则继续沿路径前进
-          a[c]
-        : // 不存在则创建，判断下一个键是否为数组索引
-          (a[c] =
-            Math.abs(path[i + 1]) >> 0 === +path[i + 1]
-              ? [] // 是数组索引则创建数组
-              : {}), // 否则创建对象
-    obj
-  )[path[path.length - 1]] = value // 最后将值赋给路径的最后一个键
-  return obj // 返回修改后的对象
+  const base = parts.shift().replace(/\/+$/, '').replace(/^(https?:\/\/[^/]+\/[^/]+)\/push$/i, '$1')
+  if (!/^https?:\/\/[^/]+\/[^/]+/i.test(base)) return ''
+  return base + (parts.length ? '?' + parts.join('?') : '')
 }
 
 // Env函数实现（已压缩）
